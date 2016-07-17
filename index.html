@@ -14,8 +14,8 @@
       <div class="notification hidden" id="notification">Your settings have been saved! You can now re-connect to your regular WIFI network</div>
       <div class="notification error hidden" id="error"></div>
 
-      <section>
-        <form action="post" method="/save" id="form">
+      <form action="post" method="/save" id="form">
+        <section id="network">
           <div id="ssid-wrapper">
 						<label for="ssid">SSID</label>
           	<span class="wrapper"><select id="ssid" disabled><option>Scanning...</option></select></span>
@@ -31,6 +31,51 @@
 
 					<span class="wrapper"><button id="button" disabled>Connect</button></span>
         </form>
+      </section>
+      <section id="mqtt">
+        <div id="mqtt-server-wrapper">
+          <label for="mqttServer">
+            Server
+            <span class="inline-error hidden" id="mqttServer-error"></span>
+          </label>
+          <span class="wrapper"><input type="text" id="mqttServer" name="mqttServer"></span>
+        </div>
+        <div id="mqtt-server-wrapper">
+          <label for="mqttPort">
+            Port
+            <span class="inline-error hidden" id="mqttPort-error"></span>
+          </label>
+          <span class="wrapper"><input type="text" id="mqttPort" name="mqttPort"></span>
+        </div>
+        <div id="mqtt-server-wrapper">
+          <label for="mqttUsername">
+            Username
+            <span class="inline-error hidden" id="mqttUsername-error"></span>
+          </label>
+          <span class="wrapper"><input type="text" id="mqttUsername" name="mqttUsername"></span>
+        </div>
+        <div id="mqtt-server-wrapper">
+          <label for="mqttPassword">
+            Password
+            <span class="inline-error hidden" id="mqttPassword-error"></span>
+          </label>
+          <span class="wrapper"><input type="text" id="mqttPassword" name="mqttPassword"></span>
+        </div>
+        <div id="mqtt-server-wrapper">
+          <label for="mqttCert">
+            Certificate
+            <span class="inline-error hidden" id="mqttCert-error"></span>
+          </label>
+          <span class="wrapper"><textarea id="mqttCert" name="mqttCert"></textarea></span>
+        </div>
+        <div id="mqtt-server-wrapper">
+          <label for="mqttCertKey">
+            Certificate Key
+            <span class="inline-error hidden" id="mqttCertKey-error"></span>
+          </label>
+          <span class="wrapper"><textarea id="mqttCertKey" name="mqttCertKey"></textarea></span>
+        </div>
+
       </section>
     </div>
     <script src="application.js"></script>

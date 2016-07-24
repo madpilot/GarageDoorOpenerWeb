@@ -14,11 +14,20 @@
   var CONNECTED = 11;
   var CONNECTION_ERROR = 12;
   var FETCHED_CONFIG = 13;
+  var WIFI_AUTOMATIC = 14;
+  var WIFI_MANUAL = 15;
 
   // Initial State
   var state = {
     wifi: {
       ui: {
+        scan: true,
+        security: {
+          changed: false,
+          valid: true,
+          error: null,
+          value: 0
+        },
         passkey: {
           changed: false,
           valid: false,
@@ -76,7 +85,7 @@
   }
 
   // Reducers
-  function reduce_aps(state, action) {
+  function reduce_wifi_aps(state, action) {
     if(action.type == SCANNING_COMPLETE) {
       return action.aps;
     }
@@ -84,7 +93,7 @@
     return state;
   }
 
-  function reduce_ap(state, action) {
+  function reduce_wifi_ap(state, action) {
     switch(action.type) {
     case SCANNING_COMPLETE:
       if(action.aps.length == 0) {
@@ -100,7 +109,17 @@
     return state;
   }
 
-  function reduce_ui_passkey(state, action) {
+  function reduce_wifi_ui_scan(state, action) {
+    switch(action.type) {
+      case WIFI_AUTOMATIC:
+        return true;
+      case WIFI_MANUAL:
+        return false;
+    };
+    return state;
+  }
+
+  function reduce_wifi_ui_passkey(state, action) {
     if(action.type == CHANGE_PASSKEY) {
       var valid = action.value.length > 0 && action.value.length <= 32;
 
@@ -114,7 +133,7 @@
     return state;
   }
 
-  function reduce_ui_deviceName(state, action) {
+  function reduce_wifi_ui_deviceName(state, action) {
     if(action.type == CHANGE_DEVICE_NAME) {
       var value = action.value;
       var valid = value.length > 0 && value.length <= 64;
@@ -138,7 +157,7 @@
     return state;
   }
 
-  function reduce_error(state, action) {
+  function reduce_wifi_error(state, action) {
     if(action.type == CONNECTION_ERROR) {
       return action.message
     }
@@ -146,7 +165,7 @@
     return state;
   }
 
-  function reduce_connection(state, action) {
+  function reduce_wifi_connection(state, action) {
     // Since these types are literally used as state flags,
     // we can just return the type
     switch(action.type) {
@@ -163,16 +182,20 @@
   function dispatch(action) {
     var oldState = assign({}, state);
     state = assign({}, oldState);
-    var ui = assign({}, state.ui)
+    var wifi = assign({}, state.wifi);
+    var wifi_ui = assign({}, wifi.ui)
 
-    ui.passkey = reduce_ui_passkey(ui.passkey, action);
-    ui.deviceName = reduce_ui_deviceName(ui.deviceName, action);
+    wifi_ui.scan = reduce_wifi_ui_scan(wifi_ui.scan, action);
+    wifi_ui.passkey = reduce_wifi_ui_passkey(wifi_ui.passkey, action);
+    wifi_ui.deviceName = reduce_wifi_ui_deviceName(wifi_ui.deviceName, action);
 
-    state.error = reduce_error(state.error, action);
-    state.ap = reduce_ap(state.ap, action);
-    state.aps = reduce_aps(state.aps, action);
-    state.connection = reduce_connection(state.connection, action);
-    state.ui = ui;
+    wifi.error = reduce_wifi_error(wifi.error, action);
+    wifi.ap = reduce_wifi_ap(wifi.ap, action);
+    wifi.aps = reduce_wifi_aps(wifi.aps, action);
+    wifi.connection = reduce_wifi_connection(wifi.connection, action);
+
+    wifi.ui = wifi_ui;
+    state.wifi = wifi;
 
     render(state, oldState);
   }
@@ -222,10 +245,10 @@
   }
 
   function render_ssid_enabled(state, old) {
-    if(state.connection === old.connection) return;
+    if(state.wifi.connection === old.wifi.connection) return;
 
     var ssid = getElementById('ssid');
-    switch(state.connection) {
+    switch(state.wifi.connection) {
       case NOT_SCANNED:
       case SCANNING:
         disable(ssid);
@@ -236,12 +259,12 @@
   }
 
   function render_ssid_aps(state, old) {
-    if(state.connection === old.connection && state.aps === old.aps && state.ap === old.ap) return;
+    if(state.wifi.connection === old.wifi.connection && state.wifi.aps === old.wifi.aps && state.wifi.ap === old.wifi.ap) return;
 
     var ssid = getElementById('ssid');
-    var aps = state.aps;
-    var connection = state.connection;
-    var selected = state.ap;
+    var aps = state.wifi.aps;
+    var connection = state.wifi.connection;
+    var selected = state.wifi.ap;
 
     if(connection === SCANNING) {
       innerHTML(ssid, '<option>Scanning...</option>');
@@ -258,17 +281,17 @@
   }
 
   function render_passkey_value(state, old) {
-    if(state.ui.passkey.value === old.ui.passkey.value) return;
+    if(state.wifi.ui.passkey.value === old.wifi.ui.passkey.value) return;
 
     var passkey = getElementById('passkey');
-    passkey.value = state.ui.passkey.value;
+    passkey.value = state.wifi.ui.passkey.value;
   }
 
   function render_passkey_visible(state, old) {
-    var encrypted = state.ap ? state.ap.encryption : null;
-    var oldEncrypted = old.ap ? old.ap.encryption : null;
+    var encrypted = state.wifi.ap ? state.wifi.ap.encryption : null;
+    var oldEncrypted = old.wifi.ap ? old.ap.wifi.encryption : null;
 
-    var same = state.ui.passkey.value === old.ui.passkey.value;
+    var same = state.wifi.ui.passkey.value === old.wifi.ui.passkey.value;
     same = same && encrypted === oldEncrypted;
 
     if(same) return;
@@ -283,15 +306,15 @@
   }
 
   function render_passkey_error(state, old) {
-    var same = state.ui.passkey.changed === old.ui.passkey.changed;
-    same = same && state.ui.passkey.valid === old.ui.passkey.valid;
-    same = same && state.ui.passkey.value === old.ui.passkey.value;
+    var same = state.wifi.ui.passkey.changed === old.wifi.ui.passkey.changed;
+    same = same && state.wifi.ui.passkey.valid === old.wifi.ui.passkey.valid;
+    same = same && state.wifi.ui.passkey.value === old.wifi.ui.passkey.value;
 
     if(same) return;
-    var value = state.ui.passkey.value;
+    var value = state.wifi.ui.passkey.value;
 
     var passkeyError = getElementById('passkey-error');
-    if(state.ui.passkey.changed && !state.ui.passkey.valid) {
+    if(state.wifi.ui.passkey.changed && !state.wifi.ui.passkey.valid) {
       if(value.length == 0) {
         innerHTML(passkeyError, 'is required');
       } else if(value.length >= 32) {
@@ -304,18 +327,18 @@
   }
 
   function render_button_disabled(state, old) {
-    var encryption = state.ap ? state.ap.encryption : null;
-    var oldEncryption = old.ap ? old.ap.encryption: null;
+    var encryption = state.wifi.ap ? state.wifi.ap.encryption : null;
+    var oldEncryption = old.wifi.ap ? old.wifi.ap.encryption: null;
 
-    var same = state.ui.passkey.valid === old.ui.passkey.valid;
-    same = same && state.connection === old.connection;
+    var same = state.wifi.ui.passkey.valid === old.wifi.ui.passkey.valid;
+    same = same && state.wifi.connection === old.wifi.connection;
     same = same && encryption === oldEncryption;
 
     if(same) return;
 
     var button = getElementById('button');
 
-    if(state.connection === SCANNING_COMPLETE && (encryption === 7 || state.ui.passkey.valid)) {
+    if(state.wifi.connection === SCANNING_COMPLETE && (encryption === 7 || state.wifi.ui.passkey.valid)) {
       enable(button);
     } else {
       disable(button);
@@ -323,32 +346,21 @@
   }
 
   function render_button_value(state, old) {
-    if(state.connection === old.connection) return;
+    if(state.wifi.connection === old.wifi.connection) return;
 
     var button = getElementById('button');
-    if(state.connection === SAVING) {
+    if(state.wifi.connection === SAVING) {
       innerHTML(button, "Connecting...");
     } else {
       innerHTML(button, "Connect");
     }
   }
 
-  function render_form_visible(state, old) {
-    if(state.connection === old.connection) return;
-
-    var form = getElementById('form');
-    if(state.connection === CONNECTED) {
-      hide(form);
-    } else {
-      show(form);
-    }
-  }
-
   function render_notification(state, old) {
-    if(state.connection === old.connection) return;
+    if(state.wifi.connection === old.wifi.connection) return;
 
     var notification = getElementById('notification');
-    if(state.connection === CONNECTED) {
+    if(state.wifi.connection === CONNECTED) {
       show(notification);
     } else {
       hide(notification);
@@ -356,10 +368,10 @@
   }
 
   function render_error(state, old) {
-    if(state.connection === old.connection) return;
+    if(state.wifi.connection === old.wifi.connection) return;
 
     var error = getElementById('error');
-    if(state.connection === CONNECTION_ERROR) {
+    if(state.wifi.connection === CONNECTION_ERROR) {
       error.innerHTML = state.error;
       show(error);
     } else {
@@ -377,7 +389,6 @@
     render_passkey_error(state, old);
     render_button_disabled(state, old);
     render_button_value(state, old);
-    render_form_visible(state, old);
     render_notification(state, old);
     render_error(state, old);
   }

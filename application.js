@@ -6,27 +6,49 @@
   var FETCHED_APS = 3;
   var CHANGE_AP = 4;
   var CHANGE_PASSKEY = 5;
-  var NOT_SCANNED = 6;
-  var SCANNING = 7;
-  var SCANNING_COMPLETE = 8;
-  var SAVING = 9;
-  var CONNECTED = 10;
-  var CONNECTION_ERROR = 11;
+  var CHANGE_DEVICE_NAME = 6;
+  var NOT_SCANNED = 7;
+  var SCANNING = 8;
+  var SCANNING_COMPLETE = 9;
+  var SAVING = 10;
+  var CONNECTED = 11;
+  var CONNECTION_ERROR = 12;
+  var FETCHED_CONFIG = 13;
 
   // Initial State
   var state = {
-    ui: {
-      passkey: {
-        changed: false,
-        valid: false,
-        error: null,
-        value: ''
-      }
+    wifi: {
+      ui: {
+        passkey: {
+          changed: false,
+          valid: false,
+          error: null,
+          value: ''
+        }
+      },
+      aps: [],
+      ap: null,
+      error: '',
+      connection: NOT_SCANNED
     },
-    aps: [],
-    ap: null,
-    error: '',
-    connection: NOT_SCANNED
+    mqtt: {
+      ui: {
+        server: {
+          changed: false,
+          valid: false,
+          error: null,
+          value: ''
+        },
+        port: {
+          changed: false,
+          valid: false,
+          error: null,
+          value: 1883
+        }
+      },
+      tls: false,
+      authenticate: false
+    }
   };
 
   function assign() {
@@ -54,6 +76,14 @@
   }
 
   // Reducers
+  function reduce_aps(state, action) {
+    if(action.type == SCANNING_COMPLETE) {
+      return action.aps;
+    }
+
+    return state;
+  }
+
   function reduce_ap(state, action) {
     switch(action.type) {
     case SCANNING_COMPLETE:
@@ -84,19 +114,35 @@
     return state;
   }
 
+  function reduce_ui_deviceName(state, action) {
+    if(action.type == CHANGE_DEVICE_NAME) {
+      var value = action.value;
+      var valid = value.length > 0 && value.length <= 64;
+
+      return assign({}, state, {
+        value: action.value,
+        valid: valid,
+        changed: true
+      });
+    } else if(action.type == FETCHED_CONFIG) {
+      var value = action.config.deviceName;
+      var valid = value.length > 0 && value.length <= 64;
+
+      return assign({}, state, {
+        value: value,
+        valid: valid,
+        changed: value != ""
+      });
+    }
+
+    return state;
+  }
+
   function reduce_error(state, action) {
     if(action.type == CONNECTION_ERROR) {
       return action.message
     }
     
-    return state;
-  }
-
-  function reduce_aps(state, action) {
-    if(action.type == SCANNING_COMPLETE) {
-      return action.aps;
-    }
-
     return state;
   }
 
@@ -120,6 +166,7 @@
     var ui = assign({}, state.ui)
 
     ui.passkey = reduce_ui_passkey(ui.passkey, action);
+    ui.deviceName = reduce_ui_deviceName(ui.deviceName, action);
 
     state.error = reduce_error(state.error, action);
     state.ap = reduce_ap(state.ap, action);

@@ -15,68 +15,111 @@
       <div class="notification error hidden" id="error"></div>
 
       <form action="post" method="/save" id="form">
-        <section id="network">
+        <section id="network">  
           <div id="ssid-wrapper">
-						<label for="ssid">SSID</label>
+						<label for="ssid" class="label">Network Name <a href="#" id="manual-network" class="scan">Join another network</a><a href="#" id="scan-network" class="scan hidden">Scan for networks</a></label>
           	<span class="wrapper"><select id="ssid" disabled><option>Scanning...</option></select></span>
           </div>
 
+          <div id="security-wrapper" class="hidden">
+            <label for="security" class="label">Security</label>
+            <span class="wrapper">
+            <select id="security">
+              <option value="0">None</option>
+              <option value="0">WEP</option>
+              <option value="0">WPA Personal</option>
+              <option value="0">WPA2 Personal</option>
+            </select>
+          </div>
+
 					<div id="passkey-wrapper" class="hidden">
-						<label for="passkey">
-              Passkey
+						<label for="passkey" class="label">
+              Password
               <span class="inline-error hidden" id="passkey-error"></span>
             </label>
 						<span class="wrapper"><input type="text" id="passkey" name="passkey"></span>
           </div>
 
 					<span class="wrapper"><button id="button" disabled>Connect</button></span>
-        </form>
-      </section>
-      <section id="mqtt">
-        <div id="mqtt-server-wrapper">
-          <label for="mqttServer">
-            Server
-            <span class="inline-error hidden" id="mqttServer-error"></span>
-          </label>
-          <span class="wrapper"><input type="text" id="mqttServer" name="mqttServer"></span>
-        </div>
-        <div id="mqtt-server-wrapper">
-          <label for="mqttPort">
-            Port
-            <span class="inline-error hidden" id="mqttPort-error"></span>
-          </label>
-          <span class="wrapper"><input type="text" id="mqttPort" name="mqttPort"></span>
-        </div>
-        <div id="mqtt-server-wrapper">
-          <label for="mqttUsername">
-            Username
-            <span class="inline-error hidden" id="mqttUsername-error"></span>
-          </label>
-          <span class="wrapper"><input type="text" id="mqttUsername" name="mqttUsername"></span>
-        </div>
-        <div id="mqtt-server-wrapper">
-          <label for="mqttPassword">
-            Password
-            <span class="inline-error hidden" id="mqttPassword-error"></span>
-          </label>
-          <span class="wrapper"><input type="text" id="mqttPassword" name="mqttPassword"></span>
-        </div>
-        <div id="mqtt-server-wrapper">
-          <label for="mqttCert">
-            Certificate
-            <span class="inline-error hidden" id="mqttCert-error"></span>
-          </label>
-          <span class="wrapper"><textarea id="mqttCert" name="mqttCert"></textarea></span>
-        </div>
-        <div id="mqtt-server-wrapper">
-          <label for="mqttCertKey">
-            Certificate Key
-            <span class="inline-error hidden" id="mqttCertKey-error"></span>
-          </label>
-          <span class="wrapper"><textarea id="mqttCertKey" name="mqttCertKey"></textarea></span>
-        </div>
+        </section>
 
-      </section>
+        <section id="mqtt">
+          <div id="mqttDeviceName-wrapper">
+            <label for="mqttServer" class="label">
+              Device Name
+              <span class="inline-error hidden" id="mqttDeviceName-error"></span>
+            </label>
+            <span class="wrapper"><input type="text" id="mqttDeviceName" name="mqttDeviceName" placeholder="garage"></span>
+          </div>
+
+          <div id="mqttServer-wrapper">
+            <label for="mqttServer" class="label">
+              Server
+              <span class="inline-error hidden" id="mqttServer-error"></span>
+            </label>
+            <span class="wrapper"><input type="text" id="mqttServer" name="mqttServer" placeholder="tcp://server.local:1883"></span>
+          </div>
+
+          <div id="mqttTLS-wrapper" class="group-wrapper">
+            <label class="inline-label">
+              <input type="checkbox" name="mqttTLS">
+              Use SSL
+            </label>
+          </div>
+
+          <div id="mqttAuthMode-wrapper" class="group-wrapper">
+            <span class="label">Authentication</span>
+            <label class="inline-label">
+              <input type="radio" name="mqttAuthMode" value="0">
+              None
+            </label>
+            <label class="inline-label">
+              <input type="radio" name="mqttAuthMode" value="1">
+              Username
+            </label>
+            <label class="inline-label">
+              <input type="radio" name="mqttAuthMode" value="2">
+              Certificate
+            </label>
+          </div>
+          
+          <div id="mqttAuthType-password">
+            <div id="mqttUsername-wrapper">
+              <label for="mqttUsername" class="label">
+                Username
+                <span class="inline-error hidden" id="mqttUsername-error"></span>
+              </label>
+              <span class="wrapper"><input type="text" id="mqttUsername" name="mqttUsername"></span>
+            </div>
+            
+            <div id="mqttPassword-wrapper">
+              <label for="mqttPassword" class="label">
+                Password
+                <span class="inline-error hidden" id="mqttPassword-error"></span>
+              </label>
+              <span class="wrapper"><input type="text" id="mqttPassword" name="mqttPassword"></span>
+            </div>
+          </div>
+
+          <div id="mqttAuthType-certificate">
+            <div id="mqttCert-wrapper">
+              <label for="mqttCert" class="label">
+                Certificate
+                <span class="inline-error hidden" id="mqttCert-error"></span>
+              </label>
+              <span class="textarea-wrapper"><textarea id="mqttCert" name="mqttCert" placeholder="-----BEGIN CERTIFICATE-----"></textarea></span>
+            </div>
+            
+            <div id="mqttCertKey-wrapper">
+              <label for="mqttCertKey" class="label">
+                Certificate Key
+                <span class="inline-error hidden" id="mqttCertKey-error"></span>
+              </label>
+              <span class="textarea-wrapper"><textarea id="mqttCertKey" name="mqttCertKey" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea></span>
+            </div>
+          </div>
+        </section>
+      </form>
     </div>
     <script src="application.js"></script>
   </body>

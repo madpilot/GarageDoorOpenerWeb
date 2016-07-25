@@ -17,48 +17,8 @@
   var WIFI_AUTOMATIC = 14;
   var WIFI_MANUAL = 15;
 
-  // Initial State
-  var state = {
-    wifi: {
-      ui: {
-        scan: true,
-        security: {
-          changed: false,
-          valid: true,
-          error: null,
-          value: 0
-        },
-        passkey: {
-          changed: false,
-          valid: false,
-          error: null,
-          value: ''
-        }
-      },
-      aps: [],
-      ap: null,
-      error: '',
-      connection: NOT_SCANNED
-    },
-    mqtt: {
-      ui: {
-        server: {
-          changed: false,
-          valid: false,
-          error: null,
-          value: ''
-        },
-        port: {
-          changed: false,
-          valid: false,
-          error: null,
-          value: 1883
-        }
-      },
-      tls: false,
-      authenticate: false
-    }
-  };
+  // The "store"
+  var state = {}
 
   function assign() {
     return Object.assign.apply(this, arguments);
@@ -84,8 +44,15 @@
     }
   }
 
-  // Reducers
-  function reduce_wifi_aps(state, action) {
+  var reducers = {};
+  reducers.wifi = {};
+  reducers.wifi.ui = {};
+
+  reducers.wifi.apis = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = [];
+    }
+
     if(action.type == SCANNING_COMPLETE) {
       return action.aps;
     }
@@ -93,7 +60,11 @@
     return state;
   }
 
-  function reduce_wifi_ap(state, action) {
+  reducers.wifi.ap = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = null;
+    }
+    
     switch(action.type) {
     case SCANNING_COMPLETE:
       if(action.aps.length == 0) {
@@ -109,7 +80,11 @@
     return state;
   }
 
-  function reduce_wifi_ui_scan(state, action) {
+  reducers.wifi.ui.scan = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = true;
+    }
+
     switch(action.type) {
       case WIFI_AUTOMATIC:
         return true;
@@ -119,7 +94,30 @@
     return state;
   }
 
-  function reduce_wifi_ui_passkey(state, action) {
+  reducers.wifi.ui.security = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = {
+        changed: false,
+        valid: true,
+        error: null,
+        value: 0
+      }
+    }
+
+    return state;
+  }
+
+  reducers.wifi.ui.passkey = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = {
+        changed: false,
+        valid: false,
+        error: null,
+        value: 0
+      }
+    }
+
+
     if(action.type == CHANGE_PASSKEY) {
       var valid = action.value.length > 0 && action.value.length <= 32;
 
@@ -133,7 +131,11 @@
     return state;
   }
 
-  function reduce_wifi_ui_deviceName(state, action) {
+  reducers.wifi.ui.deviceName = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = '';
+    }
+
     if(action.type == CHANGE_DEVICE_NAME) {
       var value = action.value;
       var valid = value.length > 0 && value.length <= 64;
@@ -157,7 +159,11 @@
     return state;
   }
 
-  function reduce_wifi_error(state, action) {
+  reducers.wifi.error = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = '';
+    }
+
     if(action.type == CONNECTION_ERROR) {
       return action.message
     }
@@ -165,7 +171,10 @@
     return state;
   }
 
-  function reduce_wifi_connection(state, action) {
+  reducers.wifi.connection = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = NOT_SCANNED;
+    }
     // Since these types are literally used as state flags,
     // we can just return the type
     switch(action.type) {
@@ -179,27 +188,82 @@
     }
   }
 
-  function dispatch(action) {
-    var oldState = assign({}, state);
-    state = assign({}, oldState);
-    var wifi = assign({}, state.wifi);
-    var wifi_ui = assign({}, wifi.ui)
+  reducers.mqtt = {};
+  reducers.mqtt.ui = {};
+  reducers.mqtt.ui.server = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = {
+        changed: false,
+        valid: false,
+        error: null,
+        value: ''
+      }
+    }
 
-    wifi_ui.scan = reduce_wifi_ui_scan(wifi_ui.scan, action);
-    wifi_ui.passkey = reduce_wifi_ui_passkey(wifi_ui.passkey, action);
-    wifi_ui.deviceName = reduce_wifi_ui_deviceName(wifi_ui.deviceName, action);
-
-    wifi.error = reduce_wifi_error(wifi.error, action);
-    wifi.ap = reduce_wifi_ap(wifi.ap, action);
-    wifi.aps = reduce_wifi_aps(wifi.aps, action);
-    wifi.connection = reduce_wifi_connection(wifi.connection, action);
-
-    wifi.ui = wifi_ui;
-    state.wifi = wifi;
-
-    render(state, oldState);
+    return state;
   }
 
+  reducers.mqtt.ui.port = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = {
+        changed: false,
+        valid: false,
+        error: null,
+        value: 1883
+      }
+    }
+
+    return state;
+  }
+
+  reducers.mqtt.tls = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = false;
+    }
+
+    return state;
+  }
+
+  reducers.mqtt.authenticate = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = false;
+    }
+
+    return state;
+  }
+
+  function reduce(state, action, node) {
+    var reduced = {};
+    if(typeof(node) == 'undefined') {
+      node = reducers;
+    }
+  
+    for(var key in node) {
+      if(node.hasOwnProperty(key)) {
+        if(typeof(state) == "undefined") {
+          state = {};
+        }
+        
+        if(typeof(node[key]) == "function") {
+          var func = node[key];
+          reduced[key] = func(state[key], action);
+        } else {
+          reduced[key] = reduce(state[key], action, node[key]);
+        }
+      }
+    }
+
+    return reduced
+  }
+
+  function dispatch(action) {
+    var oldState = assign({}, state);
+    state = reduce(oldState, action);
+    console.log(state);
+    //render(state, oldState);
+  }
+
+  // View functions
   function getElementById(id) {
     return document.getElementById(id);
   }

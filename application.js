@@ -48,7 +48,7 @@
   reducers.wifi = {};
   reducers.wifi.ui = {};
 
-  reducers.wifi.apis = function(state, action) {
+  reducers.wifi.aps = function(state, action) {
     if(typeof(state) == 'undefined') {
       state = [];
     }
@@ -75,6 +75,25 @@
 
     case CHANGE_AP:
       return assign({}, action.ap);
+    }
+
+    return state;
+  }
+
+  reducers.wifi.encryption = function(state, action) {
+    if(typeof(state) == 'undefined') {
+      state = null;
+    }
+    switch(action.type) {
+    case SCANNING_COMPLETE:
+      if(action.aps.length == 0) {
+        return null;
+      } else {
+        return action.aps[0].encryption
+      }
+
+    case CHANGE_AP:
+      return action.ap.encryption
     }
 
     return state;
@@ -253,14 +272,42 @@
       }
     }
 
-    return reduced
+    return reduced;
+  }
+
+  // Marks all the the nodes as changed. Not particulary efficient, as we JSON.stringify every
+  // node, but we prefer small source over fast/low memory usage.
+  function checkChanges(old, current) {
+    var tree = {};
+    for(var key in current) {
+      if(current.hasOwnProperty(key)) {
+        var t = {};
+        if(typeof(current[key]) == "object") {
+          t = checkChanges(old[key], current[key]);
+        }
+        
+        t._value = current[key];
+        
+        if(typeof(old) !== "object" || old === null) { // Thanks JavaScript. Of course null is an object
+          t._changed = true;
+        } else {
+          t._changed = JSON.stringify(old[key]) !== JSON.stringify(current[key]);
+        }
+      }
+      tree[key] = t;
+    }
+    return tree;
   }
 
   function dispatch(action) {
     var oldState = assign({}, state);
+    console.log('oldState', oldState);
     state = reduce(oldState, action);
-    console.log(state);
-    //render(state, oldState);
+    var changes = checkChanges(oldState, state);
+    
+    console.log('state', state);
+    console.log('changes', changes);
+    render(changes);
   }
 
   // View functions
@@ -308,153 +355,146 @@
     el.innerHTML = text;
   }
 
-  function render_ssid_enabled(state, old) {
-    if(state.wifi.connection === old.wifi.connection) return;
+  var renderers = [
+    function ssid_aps(changes) {
+      if(!changes.wifi.connection._changed && 
+         !changes.wifi.aps._changed && 
+         !changes.wifi.ap._changed) return;
 
-    var ssid = getElementById('ssid');
-    switch(state.wifi.connection) {
-      case NOT_SCANNED:
-      case SCANNING:
-        disable(ssid);
-        break;
-      default:
-        enable(ssid);
-    }
-  }
+      var ssid = getElementById('ssid');
 
-  function render_ssid_aps(state, old) {
-    if(state.wifi.connection === old.wifi.connection && state.wifi.aps === old.wifi.aps && state.wifi.ap === old.wifi.ap) return;
+      var aps = changes.wifi.aps._value;
+      var connection = changes.wifi.connection._value;
+      var selected = changes.wifi.ap._value;
 
-    var ssid = getElementById('ssid');
-    var aps = state.wifi.aps;
-    var connection = state.wifi.connection;
-    var selected = state.wifi.ap;
-
-    if(connection === SCANNING) {
-      innerHTML(ssid, '<option>Scanning...</option>');
-    } else if(connection === NOT_SCANNED || aps.length == 0) {
-      innerHTML(ssid, '');
-    } else {
-      var html = [];
-      for(var i = 0; i < aps.length; i++) {
-        var ap = aps[i];
-        html.push("<option value=\"" + ap.ssid + "\"" + (selected.ssid == ap.ssid ? " selected" : "") + ">" + ap.ssid + "</option>");
+      if(connection === SCANNING) {
+        innerHTML(ssid, '<option>Scanning...</option>');
+      } else if(connection === NOT_SCANNED || aps.length == 0) {
+        innerHTML(ssid, '');
+      } else {
+        var html = [];
+        for(var i = 0; i < aps.length; i++) {
+          var ap = aps[i];
+          html.push("<option value=\"" + ap.ssid + "\"" + (selected.ssid == ap.ssid ? " selected" : "") + ">" + ap.ssid + "</option>");
+        }
+        innerHTML(ssid, html.join(''));
       }
-      innerHTML(ssid, html.join(''));
-    }
-  }
+    },
 
-  function render_passkey_value(state, old) {
-    if(state.wifi.ui.passkey.value === old.wifi.ui.passkey.value) return;
+    function ssid_enabled(changes) {
+      if(!changes.wifi.connection._changed) return;
 
-    var passkey = getElementById('passkey');
-    passkey.value = state.wifi.ui.passkey.value;
-  }
-
-  function render_passkey_visible(state, old) {
-    var encrypted = state.wifi.ap ? state.wifi.ap.encryption : null;
-    var oldEncrypted = old.wifi.ap ? old.ap.wifi.encryption : null;
-
-    var same = state.wifi.ui.passkey.value === old.wifi.ui.passkey.value;
-    same = same && encrypted === oldEncrypted;
-
-    if(same) return;
-
-    var passkey = getElementById('passkey-wrapper');
-
-    if(encrypted == 7) {
-      hide(passkey);
-    } else {
-      show(passkey);
-    }
-  }
-
-  function render_passkey_error(state, old) {
-    var same = state.wifi.ui.passkey.changed === old.wifi.ui.passkey.changed;
-    same = same && state.wifi.ui.passkey.valid === old.wifi.ui.passkey.valid;
-    same = same && state.wifi.ui.passkey.value === old.wifi.ui.passkey.value;
-
-    if(same) return;
-    var value = state.wifi.ui.passkey.value;
-
-    var passkeyError = getElementById('passkey-error');
-    if(state.wifi.ui.passkey.changed && !state.wifi.ui.passkey.valid) {
-      if(value.length == 0) {
-        innerHTML(passkeyError, 'is required');
-      } else if(value.length >= 32) {
-        innerHTML(passkeyError, 'is too long');
+      var ssid = getElementById('ssid');
+      switch(changes.wifi.connection._value) {
+        case NOT_SCANNED:
+        case SCANNING:
+          disable(ssid);
+          break;
+        default:
+          enable(ssid);
       }
-      show(passkeyError);
-    } else {
-      hide(passkeyError);
+    },
+
+    function passkey_value(changes) {
+      if(!state.wifi.ui.passkey.value._changed) return;
+      
+      var passkey = getElementById('passkey');
+      passkey.value = state.wifi.ui.passkey.value._value;
+    },
+
+    function render_passkey_visible(changes) {
+      if(!changes.wifi.encryption._changed) return;
+
+      var passkey = getElementById('passkey-wrapper');
+
+      if(changes.wifi.encryption._value == 7) {
+        hide(passkey);
+      } else {
+        show(passkey);
+      }
     }
-  }
 
-  function render_button_disabled(state, old) {
-    var encryption = state.wifi.ap ? state.wifi.ap.encryption : null;
-    var oldEncryption = old.wifi.ap ? old.wifi.ap.encryption: null;
+    /*
+    function render_passkey_error(state, old) {
+      var same = state.wifi.ui.passkey.changed === old.wifi.ui.passkey.changed;
+      same = same && state.wifi.ui.passkey.valid === old.wifi.ui.passkey.valid;
+      same = same && state.wifi.ui.passkey.value === old.wifi.ui.passkey.value;
 
-    var same = state.wifi.ui.passkey.valid === old.wifi.ui.passkey.valid;
-    same = same && state.wifi.connection === old.wifi.connection;
-    same = same && encryption === oldEncryption;
+      if(same) return;
+      var value = state.wifi.ui.passkey.value;
 
-    if(same) return;
-
-    var button = getElementById('button');
-
-    if(state.wifi.connection === SCANNING_COMPLETE && (encryption === 7 || state.wifi.ui.passkey.valid)) {
-      enable(button);
-    } else {
-      disable(button);
+      var passkeyError = getElementById('passkey-error');
+      if(state.wifi.ui.passkey.changed && !state.wifi.ui.passkey.valid) {
+        if(value.length == 0) {
+          innerHTML(passkeyError, 'is required');
+        } else if(value.length >= 32) {
+          innerHTML(passkeyError, 'is too long');
+        }
+        show(passkeyError);
+      } else {
+        hide(passkeyError);
+      }
     }
-  }
 
-  function render_button_value(state, old) {
-    if(state.wifi.connection === old.wifi.connection) return;
+    function render_button_disabled(state, old) {
+      var encryption = state.wifi.ap ? state.wifi.ap.encryption : null;
+      var oldEncryption = old.wifi.ap ? old.wifi.ap.encryption: null;
 
-    var button = getElementById('button');
-    if(state.wifi.connection === SAVING) {
-      innerHTML(button, "Connecting...");
-    } else {
-      innerHTML(button, "Connect");
+      var same = state.wifi.ui.passkey.valid === old.wifi.ui.passkey.valid;
+      same = same && state.wifi.connection === old.wifi.connection;
+      same = same && encryption === oldEncryption;
+
+      if(same) return;
+
+      var button = getElementById('button');
+
+      if(state.wifi.connection === SCANNING_COMPLETE && (encryption === 7 || state.wifi.ui.passkey.valid)) {
+        enable(button);
+      } else {
+        disable(button);
+      }
     }
-  }
 
-  function render_notification(state, old) {
-    if(state.wifi.connection === old.wifi.connection) return;
+    function render_button_value(state, old) {
+      if(state.wifi.connection === old.wifi.connection) return;
 
-    var notification = getElementById('notification');
-    if(state.wifi.connection === CONNECTED) {
-      show(notification);
-    } else {
-      hide(notification);
+      var button = getElementById('button');
+      if(state.wifi.connection === SAVING) {
+        innerHTML(button, "Connecting...");
+      } else {
+        innerHTML(button, "Connect");
+      }
     }
-  }
 
-  function render_error(state, old) {
-    if(state.wifi.connection === old.wifi.connection) return;
+    function render_notification(state, old) {
+      if(state.wifi.connection === old.wifi.connection) return;
 
-    var error = getElementById('error');
-    if(state.wifi.connection === CONNECTION_ERROR) {
-      error.innerHTML = state.error;
-      show(error);
-    } else {
-      hide(error);
+      var notification = getElementById('notification');
+      if(state.wifi.connection === CONNECTED) {
+        show(notification);
+      } else {
+        hide(notification);
+      }
     }
-  }
 
-  // Can a function for each element - if the returned dom representation is different
-  // to the current dom representation, update the element
-  function render(state, old) {
-    render_ssid_enabled(state, old);
-    render_ssid_aps(state, old);
-    render_passkey_value(state, old);
-    render_passkey_visible(state, old);
-    render_passkey_error(state, old);
-    render_button_disabled(state, old);
-    render_button_value(state, old);
-    render_notification(state, old);
-    render_error(state, old);
+    function render_error(state, old) {
+      if(state.wifi.connection === old.wifi.connection) return;
+
+      var error = getElementById('error');
+      if(state.wifi.connection === CONNECTION_ERROR) {
+        error.innerHTML = state.error;
+        show(error);
+      } else {
+        hide(error);
+      }
+    }
+    */
+  ];
+
+  function render(changes) {
+    for(var i = 0; i < renderers.length; i++) {
+      renderers[i](changes);
+    }
   }
 
   function browse() {
@@ -469,7 +509,7 @@
     event.preventDefault();
 
     var ap = null;
-    var aps = state.aps;
+    var aps = state.wifi.aps;
     for(var i = 0; i < aps.length; i++) {
       if(aps[i].ssid == event.target.value) {
         ap = aps[i];
@@ -515,5 +555,7 @@
   getElementById('passkey').addEventListener('input', changePasskey, true);
   getElementById('form').addEventListener('submit', onSave, true);
 
+  // Run reduce once with not action to initialise the state
+  state = reduce(state, { type: null });
   browse();
 })();

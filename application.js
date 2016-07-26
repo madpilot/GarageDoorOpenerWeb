@@ -9,17 +9,22 @@
   var CHANGE_MANUAL_AP = 5;
   var CHANGE_SECURITY = 6;
   var CHANGE_PASSKEY = 7;
-  var CHANGE_DEVICE_NAME = 8;
 
-  var NOT_SCANNED = 9;
-  var SCANNING = 10;
-  var SCANNING_COMPLETE = 11;
-  var SAVING = 12;
-  var CONNECTED = 13;
-  var CONNECTION_ERROR = 14;
+  var CHANGE_MQTT_DEVICE_NAME = 8;
+  var CHANGE_MQTT_SERVER = 9;
+  var CHANGE_MQTT_TLS = 10;
+  var CHANGE_MQTT_AUTHENTICATION = 11;
+  var CHANGE_MQTT_AUTH_MODE = 12
 
-  var WIFI_SCAN = 15;
-  var WIFI_MANUAL = 16;
+  var NOT_SCANNED = 13;
+  var SCANNING = 14;
+  var SCANNING_COMPLETE = 15;
+  var SAVING = 16;
+  var CONNECTED = 17;
+  var CONNECTION_ERROR = 18;
+
+  var WIFI_SCAN = 19;
+  var WIFI_MANUAL = 20;
 
   // The "store"
   var state = {}
@@ -252,7 +257,7 @@
           state = '';
         }
 
-        if(action.type == CHANGE_DEVICE_NAME) {
+        if(action.type == CHANGE_MQTT_DEVICE_NAME) {
           var value = action.value;
           var valid = value.length > 0 && value.length <= 64;
 
@@ -362,6 +367,7 @@
   function dispatch(action) {
     var oldState = assign({}, state);
     state = reduce(oldState, action);
+    console.log('state', state);
     var changes = checkChanges(oldState, state);
     render(changes);
   }
@@ -694,10 +700,19 @@
   addEventListener(getElementById('ssid'), 'change', changeScanAP);
   addEventListener(getElementById('ssid-manual'), 'input', changeEvent(CHANGE_MANUAL_AP));
   addEventListener(getElementById('passkey'), 'input', changeEvent(CHANGE_PASSKEY));
-  addEventListener(getElementById('form'), 'submit', onSave);
+  addEventListener(getElementById('mqttDeviceName'), 'input', changeEvent(CHANGE_MQTT_DEVICE_NAME));
+  addEventListener(getElementById('mqttServer'), 'input', changeEvent(CHANGE_MQTT_SERVER));
+  
   addEventListener(getElementById('scan-network'), 'click', clickEvent(WIFI_SCAN));
   addEventListener(getElementById('manual-network'), 'click', clickEvent(WIFI_MANUAL));
   addEventListener(getElementById('security'), 'change', changeEvent(CHANGE_SECURITY));
+  addEventListener(getElementById('mqttTLS'), 'change', changeEvent(CHANGE_MQTT_TLS));
+  addEventListener(getElementById('mqttAuthMode-none'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE));
+  addEventListener(getElementById('mqttAuthMode-username'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE));
+  addEventListener(getElementById('mqttAuthMode-certificate'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE));
+  
+
+  addEventListener(getElementById('form'), 'submit', onSave);
 
   // Run reduce once with not action to initialise the state
   state = reduce(state, { type: null });

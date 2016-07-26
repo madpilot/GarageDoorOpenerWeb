@@ -67,7 +67,7 @@
 
           <div id="mqttTLS-wrapper" class="group-wrapper">
             <label class="inline-label">
-              <input type="checkbox" name="mqttTLS">
+              <input type="checkbox" id="mqttTLS">
               Use SSL
             </label>
           </div>
@@ -75,15 +75,15 @@
           <div id="mqttAuthMode-wrapper" class="group-wrapper">
             <span class="label">Authentication</span>
             <label class="inline-label">
-              <input type="radio" name="mqttAuthMode" value="0" checked>
+              <input type="radio" id="mqttAuthMode-none" name="mqttAuthMode" value="0" checked>
               None
             </label>
             <label class="inline-label">
-              <input type="radio" name="mqttAuthMode" value="1">
+              <input type="radio" id="mqttAuthMode-username"name="mqttAuthMode" value="1">
               Username
             </label>
             <label class="inline-label">
-              <input type="radio" name="mqttAuthMode" value="2">
+              <input type="radio" id="mqttAuthMode-certificate" name="mqttAuthMode" value="2">
               Certificate
             </label>
           </div>

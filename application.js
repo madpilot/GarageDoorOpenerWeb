@@ -7,19 +7,19 @@
 
   var CHANGE_SCAN_AP = 4;
   var CHANGE_MANUAL_AP = 5;
-
   var CHANGE_SECURITY = 6;
   var CHANGE_PASSKEY = 7;
   var CHANGE_DEVICE_NAME = 8;
+
   var NOT_SCANNED = 9;
   var SCANNING = 10;
   var SCANNING_COMPLETE = 11;
   var SAVING = 12;
   var CONNECTED = 13;
   var CONNECTION_ERROR = 14;
-  var FETCHED_CONFIG = 15;
-  var WIFI_SCAN = 16;
-  var WIFI_MANUAL = 17;
+
+  var WIFI_SCAN = 15;
+  var WIFI_MANUAL = 16;
 
   // The "store"
   var state = {}
@@ -217,15 +217,6 @@
         valid: valid,
         changed: true
       });
-    } else if(action.type == FETCHED_CONFIG) {
-      var value = action.config.deviceName;
-      var valid = value.length > 0 && value.length <= 64;
-
-      return assign({}, state, {
-        value: value,
-        valid: valid,
-        changed: value != ""
-      });
     }
 
     return state;
@@ -407,6 +398,16 @@
     el.innerHTML = text;
   }
 
+  function renderTextInputValue(el, value) {
+    var selectionStart = el.selectionStart,
+        selectionEnd = el.selectionEnd;
+
+    el.value = value;
+
+    el.selectionStart = selectionStart;
+    el.selectionEnd = selectionEnd;
+  }
+
   var renderers = [
     function render_ssid_aps(changes) {
       var wifi = changes.wifi;
@@ -509,6 +510,12 @@
       }
     },
 
+    function render_ssid_value(changes) {
+      var value = changes.wifi.networkName.value;
+      if(value._same) return;
+      renderTextInputValue(getElementById('ssid-manual'), value._value);
+    },
+
     function render_ssid_error(changes) {
       var ssid = changes.wifi.networkName;
       var scan = changes.wifi.scan;
@@ -531,6 +538,12 @@
       } else {
         hide(ssidError);
       }
+    },
+
+    function render_passkey_value(changes) {
+      var value = changes.wifi.passkey.value;
+      if(value._same) return;
+      renderTextInputValue(getElementById('passkey'), value._value);
     },
 
     function render_passkey_visible(changes) {
@@ -720,6 +733,7 @@
   getElementById('scan-network').addEventListener('click', scanMode, true);
   getElementById('manual-network').addEventListener('click', manualMode, true);
   getElementById('security').addEventListener('change', changeSecurity, true);
+
   // Run reduce once with not action to initialise the state
   state = reduce(state, { type: null });
   browse();

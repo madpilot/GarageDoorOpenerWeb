@@ -48,269 +48,286 @@
     }
   }
 
-  var reducers = {};
-  reducers.wifi = {};
-
-  reducers.wifi.aps = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = [];
-    }
-
-    if(action.type == SCANNING_COMPLETE) {
-      return action.aps;
-    }
-
-    return state;
+  function isUndefined(value) {
+    return typeof(value) === 'undefined'; 
   }
 
-  reducers.wifi.ap = {};
-  reducers.wifi.ap.scan = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = null;
-    }
+  function isFunction(value) {
+    return typeof(value) === 'function';
+  }
 
-    switch(action.type) {
-    case SCANNING_COMPLETE:
-      if(action.aps.length == 0) {
-        return null;
-      } else {
-        return assign({}, action.aps[0]);
+  function isObject(value) {
+    return typeof(value) === 'object' && value !== null;
+  }
+
+  var reducers = {
+    wifi: {
+      aps: function(state, action) {
+        if(isUndefined(state)) {
+          state = [];
+        }
+
+        if(action.type == SCANNING_COMPLETE) {
+          return action.aps;
+        }
+
+        return state;
+      },
+
+      ap: {
+        scan: function(state, action) {
+          if(isUndefined(state)) {
+            state = null;
+          }
+
+          switch(action.type) {
+          case SCANNING_COMPLETE:
+            if(action.aps.length == 0) {
+              return null;
+            } else {
+              return assign({}, action.aps[0]);
+            }
+
+          case CHANGE_SCAN_AP:
+            return assign({}, action.ap);
+          }
+
+          return state;
+        },
+
+        manual: function(state, action) {
+          if(isUndefined(state)) {
+            state = {
+              encryption: 7,
+              ssid: ''
+            }
+          }
+
+          switch(action.type) {
+          case CHANGE_MANUAL_AP:
+            var result = assign({}, state);
+            result.ssid = action.value;
+            return result;
+          case CHANGE_SECURITY:
+            var result = assign({}, state);
+            result.encryption = action.value;
+            return result;
+          }
+
+          return state;
+        }
+      },
+      
+      encryption: {
+        scan: function(state, action) {
+          if(isUndefined(state)) {
+            state = null;
+          }
+          
+          switch(action.type) {
+          case SCANNING_COMPLETE:
+            if(action.aps.length == 0) {
+              return null;
+            } else {
+              return action.aps[0].encryption
+            }
+
+          case CHANGE_SCAN_AP:
+            return action.ap.encryption;
+          }
+
+
+          return state;
+        },
+
+        manual: function(state, action) {
+          if(isUndefined(state)) {
+            state = 7;
+          }
+
+          if(action.type == CHANGE_SECURITY) {
+            return action.value;
+          }
+
+          return state;
+        }
+      },
+
+      scan: function(state, action) {
+        if(isUndefined(state)) {
+          state = true;
+        }
+
+        switch(action.type) {
+          case WIFI_SCAN:
+            return true;
+          case WIFI_MANUAL:
+            return false;
+        };
+        
+        return state;
+      },
+
+      passkey: function(state, action) {
+        if(isUndefined(state)) {
+          state = {
+            changed: false,
+            valid: false,
+            error: null,
+            value: ""
+          }
+        }
+
+        if(action.type == CHANGE_PASSKEY) {
+          var value = action.value;
+          var valid = value.length > 0 && value.length <= 32;
+
+          return assign({}, state, {
+            value: value,
+            valid: valid,
+            changed: true
+          });
+        }
+
+        return state;
+      },
+
+      networkName: function(state, action) {
+        if(isUndefined(state)) {
+          state = {
+            changed: false,
+            valid: false,
+            error: null,
+            value: ""
+          }
+        }
+
+        if(action.type == CHANGE_MANUAL_AP) {
+          var value = action.value;
+          var valid = value.length > 0 && value.length <= 32;
+
+          return assign({}, state, {
+            value: value,
+            valid: valid,
+            changed: true
+          });
+        }
+
+        return state;
+      },
+
+      error: function(state, action) {
+        if(isUndefined(state)) {
+          state = '';
+        }
+
+        if(action.type == CONNECTION_ERROR) {
+          return action.message
+        }
+
+        return state;
+      },
+
+      connection: function(state, action) {
+        if(isUndefined(state)) {
+          state = NOT_SCANNED;
+        }
+        // Since these types are literally used as state flags,
+        // we can just return the type
+        switch(action.type) {
+        case SCANNING:
+        case SCANNING_COMPLETE:
+        case CONNECTED:
+        case CONNECTION_ERROR:
+          return action.type;
+        }
+        
+        return state;
       }
+    },
 
-    case CHANGE_SCAN_AP:
-      return assign({}, action.ap);
-    }
+    mqtt: {
+      deviceName: function(state, action) {
+        if(isUndefined(state)) {
+          state = '';
+        }
 
-    return state;
-  }
+        if(action.type == CHANGE_DEVICE_NAME) {
+          var value = action.value;
+          var valid = value.length > 0 && value.length <= 64;
 
-  reducers.wifi.ap.manual = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = {
-        encryption: 7,
-        ssid: ''
+          return assign({}, state, {
+            value: action.value,
+            valid: valid,
+            changed: true
+          });
+        }
+
+        return state;
+      },
+      
+      server: function(state, action) {
+        if(isUndefined(state)) {
+          state = {
+            changed: false,
+            valid: false,
+            error: null,
+            value: ''
+          }
+        }
+
+        return state;
+      },
+
+      port: function(state, action) {
+        if(isUndefined(state)) {
+          state = {
+            changed: false,
+            valid: false,
+            error: null,
+            value: 1883
+          }
+        }
+
+        return state;
+      },
+
+      tls: function(state, action) {
+        if(isUndefined(state)) {
+          state = false;
+        }
+
+        return state;
+      },
+
+      authenticate: function(state, action) {
+        if(isUndefined(state)) {
+          state = false;
+        }
+
+        return state;
       }
     }
-
-    switch(action.type) {
-    case CHANGE_MANUAL_AP:
-      var result = assign({}, state);
-      result.ssid = action.ssid;
-      return result;
-    case CHANGE_SECURITY:
-      var result = assign({}, state);
-      result.encryption = action.encryption;
-      return result;
-    }
-
-    return state;
-  }
-
-  reducers.wifi.encryption = {};
-  reducers.wifi.encryption.scan = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = null;
-    }
-    switch(action.type) {
-    case SCANNING_COMPLETE:
-      if(action.aps.length == 0) {
-        return null;
-      } else {
-        return action.aps[0].encryption
-      }
-
-    case CHANGE_SCAN_AP:
-      return action.ap.encryption;
-    }
-
-
-    return state;
-  }
-
-  reducers.wifi.encryption.manual = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = 7;
-    }
-
-    switch(action.type) {
-    case CHANGE_SECURITY:
-      return action.encryption;
-    }
-
-    return state;
-  }
-
-  reducers.wifi.scan = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = true;
-    }
-
-    switch(action.type) {
-      case WIFI_SCAN:
-        return true;
-      case WIFI_MANUAL:
-        return false;
-    };
-    return state;
-  }
-
-  reducers.wifi.passkey = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = {
-        changed: false,
-        valid: false,
-        error: null,
-        value: ""
-      }
-    }
-
-    if(action.type == CHANGE_PASSKEY) {
-      var valid = action.value.length > 0 && action.value.length <= 32;
-
-      return assign({}, state, {
-        value: action.value,
-        valid: valid,
-        changed: true
-      });
-    }
-
-    return state;
-  }
-
-  reducers.wifi.networkName = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = {
-        changed: false,
-        valid: false,
-        error: null,
-        value: ""
-      }
-    }
-
-    if(action.type == CHANGE_MANUAL_AP) {
-      var value = action.ssid;
-      var valid = value.length > 0 && value.length <= 32;
-
-      return assign({}, state, {
-        value: value,
-        valid: valid,
-        changed: true
-      });
-    }
-
-    return state;
-  }
-
-
-
-  reducers.wifi.deviceName = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = '';
-    }
-
-    if(action.type == CHANGE_DEVICE_NAME) {
-      var value = action.value;
-      var valid = value.length > 0 && value.length <= 64;
-
-      return assign({}, state, {
-        value: action.value,
-        valid: valid,
-        changed: true
-      });
-    }
-
-    return state;
-  }
-
-  reducers.wifi.error = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = '';
-    }
-
-    if(action.type == CONNECTION_ERROR) {
-      return action.message
-    }
-
-    return state;
-  }
-
-  reducers.wifi.connection = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = NOT_SCANNED;
-    }
-    // Since these types are literally used as state flags,
-    // we can just return the type
-    switch(action.type) {
-    case SCANNING:
-    case SCANNING_COMPLETE:
-    case CONNECTED:
-    case CONNECTION_ERROR:
-      return action.type;
-    default:
-      return state;
-    }
-  }
-
-  reducers.mqtt = {};
-  reducers.mqtt.server = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = {
-        changed: false,
-        valid: false,
-        error: null,
-        value: ''
-      }
-    }
-
-    return state;
-  }
-
-  reducers.mqtt.port = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = {
-        changed: false,
-        valid: false,
-        error: null,
-        value: 1883
-      }
-    }
-
-    return state;
-  }
-
-  reducers.mqtt.tls = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = false;
-    }
-
-    return state;
-  }
-
-  reducers.mqtt.authenticate = function(state, action) {
-    if(typeof(state) == 'undefined') {
-      state = false;
-    }
-
-    return state;
   }
 
   function reduce(state, action, node) {
     var reduced = {};
-    if(typeof(node) == 'undefined') {
+    if(isUndefined(node)) {
       node = reducers;
     }
 
     for(var key in node) {
       if(node.hasOwnProperty(key)) {
-        if(typeof(state) == "undefined") {
+        if(isUndefined(state)) {
           state = {};
         }
 
-        if(typeof(node[key]) == "function") {
-          var func = node[key];
+        var child = node[key];
+        if(isFunction(child)) {
+          var func = child;
           reduced[key] = func(state[key], action);
         } else {
-          reduced[key] = reduce(state[key], action, node[key]);
+          reduced[key] = reduce(state[key], action, child);
         }
       }
     }
@@ -325,13 +342,13 @@
     for(var key in current) {
       if(current.hasOwnProperty(key)) {
         var t = {};
-        if(typeof(current[key]) == "object") {
+        if(isObject(current[key])) {
           t = checkChanges(old[key], current[key]);
         }
 
-        t._value = current[key];
+        t._val = current[key];
 
-        if(typeof(old) !== "object" || old === null) { // Thanks JavaScript. Of course null is an object
+        if(!isObject(old)) {
           t._same = false;
         } else {
           t._same = JSON.stringify(old[key]) === JSON.stringify(current[key]);
@@ -344,12 +361,8 @@
 
   function dispatch(action) {
     var oldState = assign({}, state);
-    console.log('oldState', oldState);
     state = reduce(oldState, action);
     var changes = checkChanges(oldState, state);
-
-    console.log('state', state);
-    console.log('changes', changes);
     render(changes);
   }
 
@@ -417,81 +430,51 @@
 
       var ssid = getElementById('ssid');
 
-      var aps = wifi.aps._value;
-      var connection = wifi.connection._value;
-      var selected = wifi.ap.scan._value;
+      var aps = wifi.aps._val;
+      var connection = wifi.connection._val;
+      var selected = wifi.ap.scan._val;
 
       if(connection === SCANNING) {
         innerHTML(ssid, '<option>Scanning...</option>');
       } else if(connection === NOT_SCANNED || aps.length == 0) {
         innerHTML(ssid, '');
       } else {
-        var html = [];
+        var html = '';
         for(var i = 0; i < aps.length; i++) {
           var ap = aps[i];
-          html.push("<option value=\"" + ap.ssid + "\"" + (selected.ssid == ap.ssid ? " selected" : "") + ">" + ap.ssid + "</option>");
+          html += "<option value=\"" + ap.ssid + "\"" + (selected.ssid == ap.ssid ? " selected" : "") + ">" + ap.ssid + "</option>";
         }
-        innerHTML(ssid, html.join(''));
+        innerHTML(ssid, html);
       }
     },
 
-    function render_ssid_visible(changes) {
+    function render_scan_visible(changes) {
       var scan = changes.wifi.scan;
       if(scan._same) return;
-      var el = getElementById('ssid');
+      
+      var showOnScan = [ 'ssid', 'manual-network' ];
+      var hideOnScan = [ 'ssid-manual', 'scan-network', 'security-wrapper' ];
 
-      if(scan._value) {
-        show(el);
-      } else {
-        hide(el);
+      for(var i = 0; i < showOnScan.length; i++) {
+        var id = showOnScan[i];
+        var el = getElementById(id);
+
+        if(scan._val) {
+          show(el);
+        } else {
+          hide(el);
+        }
       }
-    },
 
-    function render_ssid_manual_visible(changes) {
-      var scan = changes.wifi.scan;
-      if(scan._same) return;
-      var el = getElementById('ssid-manual');
+      for(var i = 0; i < hideOnScan.length; i++) {
+        var id = hideOnScan[i];
+        var el = getElementById(id);
 
-      if(scan._value) {
-        hide(el);
-      } else {
-        show(el);
-      }
-    },
-
-    function render_select_scan_visible(changes) {
-      var scan = changes.wifi.scan;
-      if(scan._same) return;
-      var el = getElementById('scan-network');
-
-      if(scan._value) {
-        hide(el);
-      } else {
-        show(el);
-      }
-    },
-
-    function render_select_manual_visible(changes) {
-      var scan = changes.wifi.scan;
-      if(scan._same) return;
-      var el = getElementById('manual-network');
-
-      if(scan._value) {
-        show(el);
-      } else {
-        hide(el);
-      }
-    },
-
-    function render_security_wrapper_visible(changes) {
-      var scan = changes.wifi.scan;
-      if(scan._same) return;
-      var el = getElementById('security-wrapper');
-
-      if(scan._value) {
-        hide(el);
-      } else {
-        show(el);
+        if(scan._val) {
+          hide(el);
+        } else {
+          show(el);
+        }
       }
     },
 
@@ -500,7 +483,7 @@
       if(connection._same) return;
 
       var ssid = getElementById('ssid');
-      switch(connection._value) {
+      switch(connection._val) {
         case NOT_SCANNED:
         case SCANNING:
           disable(ssid);
@@ -510,25 +493,26 @@
       }
     },
 
-    function render_ssid_value(changes) {
+    function render_ssid_val(changes) {
       var value = changes.wifi.networkName.value;
       if(value._same) return;
-      renderTextInputValue(getElementById('ssid-manual'), value._value);
+      renderTextInputValue(getElementById('ssid-manual'), value._val);
     },
 
+    // OPTIMISE
     function render_ssid_error(changes) {
       var ssid = changes.wifi.networkName;
       var scan = changes.wifi.scan;
 
       if(scan._same && ssid._same && ssid.valid._same && ssid.value._same) return;
 
-      var value = ssid.value._value;
+      var value = ssid.value._val;
 
       var ssidError = getElementById('ssid-error');
 
-      if(scan._value) {
+      if(scan._val) {
         hide(ssidError);
-      } else if(ssid.changed._value && !ssid.valid._value) {
+      } else if(ssid.changed._val && !ssid.valid._val) {
         if(value.length == 0) {
           innerHTML(ssidError, 'is required');
         } else if(value.length >= 32) {
@@ -540,10 +524,10 @@
       }
     },
 
-    function render_passkey_value(changes) {
+    function render_passkey_val(changes) {
       var value = changes.wifi.passkey.value;
       if(value._same) return;
-      renderTextInputValue(getElementById('passkey'), value._value);
+      renderTextInputValue(getElementById('passkey'), value._val);
     },
 
     function render_passkey_visible(changes) {
@@ -554,9 +538,9 @@
 
       var passkey = getElementById('passkey-wrapper');
 
-      if(scan._value && encryption.scan._value == 7) {
+      if(scan._val && encryption.scan._val == 7) {
         hide(passkey);
-      } else if(!scan._value && encryption.manual._value == 7) {
+      } else if(!scan._val && encryption.manual._val == 7) {
         hide(passkey);
       } else {
         show(passkey);
@@ -567,11 +551,11 @@
       var passkey = changes.wifi.passkey;
       if(passkey._same && passkey.valid._same && passkey.value._same) return;
 
-      var value = passkey.value._value;
+      var value = passkey.value._val;
 
       var passkeyError = getElementById('passkey-error');
 
-      if(passkey.changed._value && !passkey.valid._value) {
+      if(passkey.changed._val && !passkey.valid._val) {
         if(value.length == 0) {
           innerHTML(passkeyError, 'is required');
         } else if(value.length >= 32) {
@@ -595,25 +579,19 @@
 
       var button = getElementById('button');
 
-      if(wifi.scan._value && wifi.connection._value === SCANNING_COMPLETE && (wifi.encryption.scan._value === 7 || wifi.passkey.valid._value)) {
+      if(wifi.scan._val && wifi.connection._val === SCANNING_COMPLETE && (wifi.encryption.scan._val === 7 || wifi.passkey.valid._val)) {
         enable(button);
-      } else if(!wifi.scan._value && wifi.networkName.valid._value && (wifi.encryption.manual._value === 7 || wifi.passkey.valid._value)) {
+      } else if(!wifi.scan._val && wifi.networkName.valid._val && (wifi.encryption.manual._val === 7 || wifi.passkey.valid._val)) {
         enable(button);
       } else {
         disable(button);
       }
     },
 
-    function render_button_value(changes) {
+    function render_button_val(changes) {
       var connection = changes.wifi.connection;
       if(connection._same) return;
-
-      var button = getElementById('button');
-      if(connection._value === SAVING) {
-        innerHTML(button, "Connecting...");
-      } else {
-        innerHTML(button, "Connect");
-      }
+      innerHTML(getElementById('button'), connection._val === SAVING ? "Connecting..." : "Connect");
     },
 
     function render_notification(changes) {
@@ -673,29 +651,6 @@
     });
   }
 
-  function changeManualAP(event) {
-    dispatch({
-      type: CHANGE_MANUAL_AP,
-      ssid: event.target.value
-    });
-  }
-
-  function changeSecurity(event) {
-    dispatch({
-      type: CHANGE_SECURITY,
-      encryption: parseInt(event.target.value)
-    });
-  }
-
-  function changePasskey(event) {
-    event.preventDefault();
-
-    dispatch({
-      type: CHANGE_PASSKEY,
-      value: event.target.value
-    });
-  }
-
   function onSave(event) {
     event.preventDefault();
 
@@ -716,23 +671,33 @@
     });
   }
 
-  function scanMode(event) {
-    event.preventDefault();
-    dispatch({ type: WIFI_SCAN });
+  function addEventListener(element, event, func) {
+    element.addEventListener(event, func, true);
   }
 
-  function manualMode(event) {
-    event.preventDefault();
-    dispatch({ type: WIFI_MANUAL });
+  function clickEvent(type) {
+    return function(event) {
+      event.preventDefault();
+      dispatch({ type: type });
+    }
   }
 
-  getElementById('ssid').addEventListener('change', changeScanAP, true);
-  getElementById('ssid-manual').addEventListener('input', changeManualAP, true);
-  getElementById('passkey').addEventListener('input', changePasskey, true);
-  getElementById('form').addEventListener('submit', onSave, true);
-  getElementById('scan-network').addEventListener('click', scanMode, true);
-  getElementById('manual-network').addEventListener('click', manualMode, true);
-  getElementById('security').addEventListener('change', changeSecurity, true);
+  function changeEvent(type) {
+    return function(event) {
+      dispatch({
+        type: type,
+        value: event.target.value
+      });
+    }
+  }
+
+  addEventListener(getElementById('ssid'), 'change', changeScanAP);
+  addEventListener(getElementById('ssid-manual'), 'input', changeEvent(CHANGE_MANUAL_AP));
+  addEventListener(getElementById('passkey'), 'input', changeEvent(CHANGE_PASSKEY));
+  addEventListener(getElementById('form'), 'submit', onSave);
+  addEventListener(getElementById('scan-network'), 'click', clickEvent(WIFI_SCAN));
+  addEventListener(getElementById('manual-network'), 'click', clickEvent(WIFI_MANUAL));
+  addEventListener(getElementById('security'), 'change', changeEvent(CHANGE_SECURITY));
 
   // Run reduce once with not action to initialise the state
   state = reduce(state, { type: null });

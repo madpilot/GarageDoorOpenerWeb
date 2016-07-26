@@ -15,20 +15,27 @@
       <div class="notification error hidden" id="error"></div>
 
       <form action="post" method="/save" id="form">
-        <section id="network">  
+        <section id="network">
           <div id="ssid-wrapper">
-						<label for="ssid" class="label">Network Name <a href="#" id="manual-network" class="scan">Join another network</a><a href="#" id="scan-network" class="scan hidden">Scan for networks</a></label>
-          	<span class="wrapper"><select id="ssid" disabled><option>Scanning...</option></select></span>
+						<label for="ssid" class="label">
+              Network Name
+              <span class="inline-error hidden" id="ssid-error"></span>
+              <a href="#" id="manual-network" class="scan">Join another network</a><a href="#" id="scan-network" class="scan hidden">Scan for networks</a>
+            </label>
+          	<span class="wrapper">
+              <select id="ssid" disabled><option>Scanning...</option></select>
+              <input id="ssid-manual" class="hidden" type="text">
+            </span>
           </div>
 
           <div id="security-wrapper" class="hidden">
             <label for="security" class="label">Security</label>
             <span class="wrapper">
             <select id="security">
-              <option value="0">None</option>
+              <option value="7">None</option>
               <option value="1">WEP</option>
               <option value="2">WPA Personal</option>
-              <option value="3">WPA2 Personal</option>
+              <option value="4">WPA2 Personal</option>
             </select>
           </div>
 
@@ -82,7 +89,7 @@
               Certificate
             </label>
           </div>
-          
+
           <div id="mqttAuthType-password">
             <div id="mqttUsername-wrapper">
               <label for="mqttUsername" class="label">
@@ -91,7 +98,7 @@
               </label>
               <span class="wrapper"><input type="text" id="mqttUsername" name="mqttUsername"></span>
             </div>
-            
+
             <div id="mqttPassword-wrapper">
               <label for="mqttPassword" class="label">
                 Password
@@ -109,7 +116,7 @@
               </label>
               <span class="textarea-wrapper"><textarea id="mqttCert" name="mqttCert" placeholder="-----BEGIN CERTIFICATE-----"></textarea></span>
             </div>
-            
+
             <div id="mqttCertKey-wrapper">
               <label for="mqttCertKey" class="label">
                 Certificate Key

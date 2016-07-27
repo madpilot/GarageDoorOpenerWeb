@@ -75,6 +75,45 @@
     }
   }
 
+  function trim(val) {
+    return val.replace(/^\s+|\s+$/g, '');
+  }
+
+  function validatePresence() {
+    return function(obj) {
+      if(trim(obj.value + '') == "") {
+        return assign({}, obj, {
+          valid: false,
+          error: "is required"
+        });
+      }
+      return obj;
+    }
+  }
+
+  function validateLength(len) {
+    return function(obj) {
+      if(trim(obj.value + '').length > len) {
+        return assign({}, obj, {
+          valid: false,
+          error: "is too long"
+        });
+      }
+      return obj;
+    }
+  }
+
+  function validate(obj, validators) {
+    obj = assign({}, obj, {
+      valid: true,
+      error: null
+    });
+    for(var i = 0; i < validators.length; i++) {
+      obj = validators[i](obj);
+    }
+    return obj;
+  }
+
   var reducers = {
     wifi: {
       aps: function(state, action) {
@@ -190,13 +229,11 @@
 
         if(action.type == CHANGE_PASSKEY) {
           var value = action.value;
-          var valid = value.length > 0 && value.length <= 32;
 
-          return assign({}, state, {
+          return validate(assign({}, state, {
             value: value,
-            valid: valid,
             changed: true
-          });
+          }), [ validatePresence(), validateLength(32) ]);
         }
 
         return state;
@@ -209,13 +246,11 @@
 
         if(action.type == CHANGE_MANUAL_AP) {
           var value = action.value;
-          var valid = value.length > 0 && value.length <= 32;
 
-          return assign({}, state, {
+          return validate(assign({}, state, {
             value: value,
-            valid: valid,
             changed: true
-          });
+          }), [ validatePresence(), validateLength(32) ]);
         }
 
         return state;
@@ -259,13 +294,11 @@
 
         if(action.type == CHANGE_MQTT_DEVICE_NAME) {
           var value = action.value;
-          var valid = value.length > 0 && value.length <= 64;
 
-          return assign({}, state, {
+          return validate(assign({}, state, {
             value: action.value,
-            valid: valid,
             changed: true
-          });
+          }), [ validatePresence(), validateLength(64) ]);
         }
 
         return state;
@@ -277,10 +310,10 @@
         }
 
         if(action.type == CHANGE_MQTT_SERVER) {
-          return assign({}, state, {
+          return validate(assign({}, state, {
             changed: true,
             value: action.value
-          }); 
+          }), [ validatePresence(), validateLength(64) ]);
           return result;
         }
 
@@ -300,11 +333,11 @@
             value = "";
           }
           
-          return assign({}, state, {
+          return validate(assign({}, state, {
             changed: true,
             nonce: (new Date()).getTime(),
             value: value
-          });
+          }), [ validatePresence(), validateLength(5) ]);
         }
 
         return state;
@@ -448,6 +481,15 @@
     el.selectionEnd = selectionEnd;
   }
 
+  function renderError(el, obj) {
+    if(obj.valid._val) {
+      hide(el);
+    } else {
+      innerHTML(el, obj.error._val);
+      show(el);
+    }
+  }
+
   var renderers = [
     function render_ssid_aps(changes) {
       var wifi = changes.wifi;
@@ -521,40 +563,19 @@
     },
 
     function render_ssid_val(changes) {
-      var value = changes.wifi.networkName.value;
+      var networkName = changes.wifi.networkName;
+      var value = networkName.value;
       if(value._same) return;
       renderTextInputValue(getElementById('ssid-manual'), value._val);
-    },
-
-    // OPTIMISE
-    function render_ssid_error(changes) {
-      var ssid = changes.wifi.networkName;
-      var scan = changes.wifi.scan;
-
-      if(scan._same && ssid._same && ssid.valid._same && ssid.value._same) return;
-
-      var value = ssid.value._val;
-
-      var ssidError = getElementById('ssid-error');
-
-      if(scan._val) {
-        hide(ssidError);
-      } else if(ssid.changed._val && !ssid.valid._val) {
-        if(value.length == 0) {
-          innerHTML(ssidError, 'is required');
-        } else if(value.length >= 32) {
-          innerHTML(ssidError, 'is too long');
-        }
-        show(ssidError);
-      } else {
-        hide(ssidError);
-      }
+      renderError(getElementById('ssid-error'), networkName);
     },
 
     function render_passkey_val(changes) {
-      var value = changes.wifi.passkey.value;
+      var passkey = changes.wifi.passkey;
+      var value = passkey.value;
       if(value._same) return;
       renderTextInputValue(getElementById('passkey'), value._val);
+      renderError(getElementById('passkey-error'), passkey);
     },
 
     function render_passkey_visible(changes) {
@@ -571,26 +592,6 @@
         hide(passkey);
       } else {
         show(passkey);
-      }
-    },
-
-    function render_passkey_error(changes) {
-      var passkey = changes.wifi.passkey;
-      if(passkey._same && passkey.valid._same && passkey.value._same) return;
-
-      var value = passkey.value._val;
-
-      var passkeyError = getElementById('passkey-error');
-
-      if(passkey.changed._val && !passkey.valid._val) {
-        if(value.length == 0) {
-          innerHTML(passkeyError, 'is required');
-        } else if(value.length >= 32) {
-          innerHTML(passkeyError, 'is too long');
-        }
-        show(passkeyError);
-      } else {
-        hide(passkeyError);
       }
     },
 
@@ -680,13 +681,22 @@
       }
     },
 
+    function render_device_name(changes) {
+      var deviceName = changes.mqtt.deviceName;
+
+      if(deviceName._same) return;
+      var el = getElementById('mqttDeviceName');
+      renderTextInputValue(el, deviceName.value._val);
+      renderError(getElementById('mqttDeviceName-error'), deviceName);
+    },
+
     function render_server(changes) {
       var server = changes.mqtt.server;
 
       if(server._same) return;
-
       var el = getElementById('mqttServer');
       renderTextInputValue(el, server.value._val);
+      renderError(getElementById('mqttServer-error'), server);
     },
 
     function render_port(changes) {

@@ -66,6 +66,15 @@
     return typeof(value) === 'object' && value !== null;
   }
 
+  function initialiseTextField() {
+    return {
+      changed: false,
+      valid: false,
+      error: null,
+      value: ''
+    }
+  }
+
   var reducers = {
     wifi: {
       aps: function(state, action) {
@@ -176,12 +185,7 @@
 
       passkey: function(state, action) {
         if(isUndefined(state)) {
-          state = {
-            changed: false,
-            valid: false,
-            error: null,
-            value: ""
-          }
+          state = initialiseTextField();
         }
 
         if(action.type == CHANGE_PASSKEY) {
@@ -200,12 +204,7 @@
 
       networkName: function(state, action) {
         if(isUndefined(state)) {
-          state = {
-            changed: false,
-            valid: false,
-            error: null,
-            value: ""
-          }
+          state = initialiseTextField();
         }
 
         if(action.type == CHANGE_MANUAL_AP) {
@@ -255,7 +254,7 @@
     mqtt: {
       deviceName: function(state, action) {
         if(isUndefined(state)) {
-          state = '';
+          state = initialiseTextField();
         }
 
         if(action.type == CHANGE_MQTT_DEVICE_NAME) {
@@ -274,21 +273,14 @@
      
       server: function(state, action) {
         if(isUndefined(state)) {
-          state = {
-            changed: false,
-            valid: false,
-            error: null,
-            value: ''
-          };
+          state = initialiseTextField();
         }
 
         if(action.type == CHANGE_MQTT_SERVER) {
-          var result = assign({}, state); 
-          if(action.value != result.value) {
-            result.changed = true;
-            result.value = action.value;
-          }
-          
+          return assign({}, state, {
+            changed: true,
+            value: action.value
+          }); 
           return result;
         }
 
@@ -297,36 +289,22 @@
 
       port: function(state, action) {
         if(isUndefined(state)) {
-          state = {
-            changed: false,
-            valid: false,
-            error: null,
-            value: '',
-            nonce: ''
-          }
+          state = initialiseTextField();
+          state.nonce = '';
         }
 
         if(action.type == CHANGE_MQTT_PORT) {
-          var result = assign({}, state); 
-          var value = action.value;
-                   
-          result.changed = true;
-          result.nonce = (new Date()).getTime();
-
-          value = value.replace(/\D*|\-*/g, '');
+          var value = parseInt(action.value.replace(/\D*|\-*/g, ''));
           
-          if(value == "") {
+          if(isNaN(value)) {
             value = "";
-          } else {
-            value = parseInt(value);
- 
-            if(value < 0) {
-              value = 0;
-            }
           }
           
-          result.value = value;
-          return result;
+          return assign({}, state, {
+            changed: true,
+            nonce: (new Date()).getTime(),
+            value: value
+          });
         }
 
         return state;

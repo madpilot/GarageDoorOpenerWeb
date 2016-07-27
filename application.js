@@ -270,15 +270,26 @@
 
         return state;
       },
-      
+     
       server: function(state, action) {
         if(isUndefined(state)) {
           state = {
             changed: false,
-            valid: false,
-            error: null,
             value: ''
+          };
+        }
+
+        if(action.type == CHANGE_MQTT_SERVER) {
+          var result = assign({}, state);
+          var parts = action.value.split(':');
+          var value = parts.shift();
+          
+          if(value != result.value) {
+            result.changed = true;
+            result.value = value;
           }
+          
+          return result;
         }
 
         return state;
@@ -288,10 +299,42 @@
         if(isUndefined(state)) {
           state = {
             changed: false,
-            valid: false,
-            error: null,
-            value: 1883
+            value: "1883"
           }
+        }
+
+        if(action.type == CHANGE_MQTT_SERVER) {
+          var result = assign({}, state);
+          var parts = action.value.split(':');
+          var port = parts.pop();
+          
+          if(parts.length > 0 && port != result.value) {
+            result.changed = true;
+            result.value = port;
+          }
+        
+          return result;
+        }
+
+        if(action.type === CHANGE_MQTT_TLS) {
+          var result = assign({}, state);
+          
+          if(!result.changed) {
+            result.value = action.value ? "8883" : "1883";
+          }
+          
+          return result;
+        }
+
+        if(action.type === CHANGE_MQTT_AUTHENTICATION) {
+          var result = assign({}, state);
+          
+          if(!result.changed) {
+            console.log(action.value);
+            result.value = action.value == 2 ? "8883" : "1883";
+          }
+          
+          return result;
         }
 
         return state;
@@ -301,13 +344,21 @@
         if(isUndefined(state)) {
           state = false;
         }
-
+        
+        if(action.type === CHANGE_MQTT_TLS) {
+          return action.value;
+        }
+        
         return state;
       },
 
       authenticate: function(state, action) {
         if(isUndefined(state)) {
-          state = false;
+          state = 0;
+        }
+
+        if(action.type === CHANGE_MQTT_AUTH_MODE) {
+          return action.value 
         }
 
         return state;
@@ -623,6 +674,55 @@
       } else {
         hide(error);
       }
+    },
+
+    function render_tls(changes) {
+      var tls = changes.mqtt.tls;
+      var authenticate = changes.mqtt.authenticate;
+
+      //if(tls._same && authenticate._same) return;
+
+      var el = getElementById('mqttTLS');
+      el.checked = tls._val || authenticate._val == 2;
+    },
+
+    function render_mqtt_authentication_visible(changes) {
+      var authenticate = changes.mqtt.authenticate;
+
+      if(authenticate._same) return;
+
+      var password = getElementById('mqttAuthType-password');
+      var certificate = getElementById('mqttAuthType-certificate');
+
+      switch(authenticate._val) {
+        case 0:
+          hide(password);
+          hide(certificate);
+          break;
+        case 1:
+          show(password);
+          hide(certificate);
+          break;
+        case 2:
+          hide(password);
+          show(certificate);
+          break;
+      }
+    },
+
+    function render_server(changes) {
+      var server = changes.mqtt.server;
+      var port = changes.mqtt.port;
+
+      //if(server._same && port._same) return;
+
+      var el = getElementById('mqttServer');
+      var str = server.value._val;
+      if(server.value._val != '' && (port.changed._val || changes.mqtt.tls._val || changes.mqtt.authenticate._val == 2)) {
+        str += ':' + port.value._val;
+      }
+
+      renderTextInputValue(el, str);
     }
   ];
 
@@ -688,11 +788,24 @@
     }
   }
 
-  function changeEvent(type) {
+  function changeEvent(type, parser) {
+    if(isUndefined(parser)) {
+      parser = function(a) { return a; };
+    }
+
     return function(event) {
       dispatch({
         type: type,
-        value: event.target.value
+        value: parser(event.target.value)
+      });
+    }
+  }
+
+  function changeCheckboxEvent(type) {
+    return function(event) {
+      dispatch({
+        type: type,
+        value: event.target.checked
       });
     }
   }
@@ -706,15 +819,16 @@
   addEventListener(getElementById('scan-network'), 'click', clickEvent(WIFI_SCAN));
   addEventListener(getElementById('manual-network'), 'click', clickEvent(WIFI_MANUAL));
   addEventListener(getElementById('security'), 'change', changeEvent(CHANGE_SECURITY));
-  addEventListener(getElementById('mqttTLS'), 'change', changeEvent(CHANGE_MQTT_TLS));
-  addEventListener(getElementById('mqttAuthMode-none'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE));
-  addEventListener(getElementById('mqttAuthMode-username'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE));
-  addEventListener(getElementById('mqttAuthMode-certificate'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE));
   
+  addEventListener(getElementById('mqttServer'), 'change', changeEvent(CHANGE_MQTT_SERVER));
+  addEventListener(getElementById('mqttTLS'), 'change', changeCheckboxEvent(CHANGE_MQTT_TLS));
+  addEventListener(getElementById('mqttAuthMode-none'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
+  addEventListener(getElementById('mqttAuthMode-username'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
+  addEventListener(getElementById('mqttAuthMode-certificate'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
 
   addEventListener(getElementById('form'), 'submit', onSave);
 
-  // Run reduce once with not action to initialise the state
+  // Run reduce once with no action to initialise the state
   state = reduce(state, { type: null });
   browse();
 })();

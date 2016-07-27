@@ -103,7 +103,7 @@ form {
   margin-bottom: 1rem;
 }
 
-input[type=text], textarea, button, select {
+input[type=text], input[type=number], textarea, button, select {
   width: 100%;
   height: 100%;
   padding: 5px 0.5rem;
@@ -166,3 +166,15 @@ button:disabled:hover {
   cursor: default;
 }
 
+.mqtt-server-container {
+  display: flex;
+}
+
+.mqtt-server-wrapper {
+  flex: 1 1 66%;
+  margin-right: 0.5rem;
+}
+
+.mqtt-port-wrapper {
+  flex: 0 0 33%;
+}

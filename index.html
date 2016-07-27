@@ -57,12 +57,22 @@
             <span class="wrapper"><input type="text" id="mqttDeviceName" name="mqttDeviceName" placeholder="garage"></span>
           </div>
 
-          <div id="mqttServer-wrapper">
-            <label for="mqttServer" class="label">
-              Server
-              <span class="inline-error hidden" id="mqttServer-error"></span>
-            </label>
-            <span class="wrapper"><input type="text" id="mqttServer" name="mqttServer" placeholder="server.local:1883"></span>
+          <div class="mqtt-server-container">
+            <div class="mqtt-server-wrapper">
+              <label for="mqttServer" class="label">
+                Server
+                <span class="inline-error hidden" id="mqttServer-error"></span>
+              </label>
+              <span class="wrapper"><input type="text" id="mqttServer" name="mqttServer" placeholder="server.local"></span>
+            </div>
+            <div class="mqtt-port-wrapper">
+              <label for="mqttPort" class="label">
+                Port
+                <span class="inline-error hidden" id="mqttPort-error"></span>
+              </label>
+              <span class="wrapper"><input type="number" id="mqttPort" name="mqttPort" placeholder="1883" min="0" max="32768" value="1883"></span>
+            </div>
+
           </div>
 
           <div id="mqttTLS-wrapper" class="group-wrapper">

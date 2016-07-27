@@ -12,19 +12,20 @@
 
   var CHANGE_MQTT_DEVICE_NAME = 8;
   var CHANGE_MQTT_SERVER = 9;
-  var CHANGE_MQTT_TLS = 10;
-  var CHANGE_MQTT_AUTHENTICATION = 11;
-  var CHANGE_MQTT_AUTH_MODE = 12
+  var CHANGE_MQTT_PORT = 10;
+  var CHANGE_MQTT_TLS = 11;
+  var CHANGE_MQTT_AUTHENTICATION = 12;
+  var CHANGE_MQTT_AUTH_MODE = 13;
 
-  var NOT_SCANNED = 13;
-  var SCANNING = 14;
-  var SCANNING_COMPLETE = 15;
-  var SAVING = 16;
-  var CONNECTED = 17;
-  var CONNECTION_ERROR = 18;
+  var NOT_SCANNED = 14;
+  var SCANNING = 15;
+  var SCANNING_COMPLETE = 16;
+  var SAVING = 17;
+  var CONNECTED = 18;
+  var CONNECTION_ERROR = 19;
 
-  var WIFI_SCAN = 19;
-  var WIFI_MANUAL = 20;
+  var WIFI_SCAN = 20;
+  var WIFI_MANUAL = 21;
 
   // The "store"
   var state = {}
@@ -275,18 +276,17 @@
         if(isUndefined(state)) {
           state = {
             changed: false,
+            valid: false,
+            error: null,
             value: ''
           };
         }
 
         if(action.type == CHANGE_MQTT_SERVER) {
-          var result = assign({}, state);
-          var parts = action.value.split(':');
-          var value = parts.shift();
-          
-          if(value != result.value) {
+          var result = assign({}, state); 
+          if(action.value != result.value) {
             result.changed = true;
-            result.value = value;
+            result.value = action.value;
           }
           
           return result;
@@ -299,41 +299,33 @@
         if(isUndefined(state)) {
           state = {
             changed: false,
-            value: "1883"
+            valid: false,
+            error: null,
+            value: '',
+            nonce: ''
           }
         }
 
-        if(action.type == CHANGE_MQTT_SERVER) {
-          var result = assign({}, state);
-          var parts = action.value.split(':');
-          var port = parts.pop();
-          
-          if(parts.length > 0 && port != result.value) {
-            result.changed = true;
-            result.value = port;
-          }
-        
-          return result;
-        }
+        if(action.type == CHANGE_MQTT_PORT) {
+          var result = assign({}, state); 
+          var value = action.value;
+                   
+          result.changed = true;
+          result.nonce = (new Date()).getTime();
 
-        if(action.type === CHANGE_MQTT_TLS) {
-          var result = assign({}, state);
+          value = value.replace(/\D*|\-*/g, '');
           
-          if(!result.changed) {
-            result.value = action.value ? "8883" : "1883";
+          if(value == "") {
+            value = "";
+          } else {
+            value = parseInt(value);
+ 
+            if(value < 0) {
+              value = 0;
+            }
           }
           
-          return result;
-        }
-
-        if(action.type === CHANGE_MQTT_AUTHENTICATION) {
-          var result = assign({}, state);
-          
-          if(!result.changed) {
-            console.log(action.value);
-            result.value = action.value == 2 ? "8883" : "1883";
-          }
-          
+          result.value = value;
           return result;
         }
 
@@ -712,17 +704,32 @@
 
     function render_server(changes) {
       var server = changes.mqtt.server;
-      var port = changes.mqtt.port;
 
-      //if(server._same && port._same) return;
+      if(server._same) return;
 
       var el = getElementById('mqttServer');
-      var str = server.value._val;
-      if(server.value._val != '' && (port.changed._val || changes.mqtt.tls._val || changes.mqtt.authenticate._val == 2)) {
-        str += ':' + port.value._val;
-      }
+      renderTextInputValue(el, server.value._val);
+    },
 
-      renderTextInputValue(el, str);
+    function render_port(changes) {
+      var port = changes.mqtt.port;
+      var tls = changes.mqtt.tls;
+      var authenticate = changes.mqtt.authenticate;
+
+      if(port._same && tls._same && authenticate._same) return;
+
+      var el = getElementById('mqttPort');
+      var val = port.value._val;
+      
+      if(val == "" && !port.changed._val) {
+        if(tls._val || authenticate._val == 2) {
+          el.value = 8883;
+        } else {
+          el.value = 1883;
+        }
+      } else {
+        el.value = val;
+      }
     }
   ];
 
@@ -815,6 +822,7 @@
   addEventListener(getElementById('passkey'), 'input', changeEvent(CHANGE_PASSKEY));
   addEventListener(getElementById('mqttDeviceName'), 'input', changeEvent(CHANGE_MQTT_DEVICE_NAME));
   addEventListener(getElementById('mqttServer'), 'input', changeEvent(CHANGE_MQTT_SERVER));
+  addEventListener(getElementById('mqttPort'), 'input', changeEvent(CHANGE_MQTT_PORT));
   
   addEventListener(getElementById('scan-network'), 'click', clickEvent(WIFI_SCAN));
   addEventListener(getElementById('manual-network'), 'click', clickEvent(WIFI_MANUAL));

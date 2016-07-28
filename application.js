@@ -888,20 +888,53 @@
     });
   }
 
+  function buildParam(key, value) {
+    return key + "=" + encodeURIComponent(value);
+  }
+
   function onSave(event) {
     event.preventDefault();
 
-    var ssid = state.wifi.ap.scan.ssid;
-    var passkey = state.wifi.passkey.value;
+    var data = [];
+    var ap = null;
+    var wifi = state.wifi;
 
-    var data = "ssid=" + ssid;
-    if(state.wifi.ap.scan.encryption != 7) {
-      data += "&passkey=" + passkey;
+    if(wifi.scan) {
+      ap = wifi.ap.scan;
+    } else {
+      ap = wifi.ap.manual;
+    }
+
+    data.push(buildParam("ssid", ap.ssid));
+    if(!wifi.scan) {
+      data.push(buildParam("security", ap.encryption));
+    }
+
+    if(ap.encryption != 7) {
+      data.push(buildParam("passkey", wifi.passkey.value));
+    }
+
+    var mqtt = state.mqtt;
+    data.push(buildParam("mqttDeviceName", mqtt.deviceName.value));
+    data.push(buildParam("mqttServer", mqtt.server.value));
+    data.push(buildParam("mqttPort", mqtt.port.value));
+    data.push(buildParam("mqttTLS", mqtt.tls ? "1" : "0"));
+    data.push(buildParam("mqttAuthtype", mqtt.authenticate));
+
+    switch(mqtt.authenticate) {
+      case 1:
+        data.push(buildParam("mqttUsername", mqtt.username.value));
+        data.push(buildParam("mqttPassword", mqtt.password.value));
+        break;
+      case 2:
+        data.push(buildParam("mqttCert", mqtt.certificate.value));
+        data.push(buildParam("mqttCertKey", mqtt.secretKey.value));
+        break;
     }
 
     dispatch({ type: SAVING });
 
-    ajax("/save", "POST", data, function() {
+    ajax("/save", "POST", data.join("&"), function() {
       dispatch({ type: CONNECTED });
     }, function(message) {
       dispatch({ type: CONNECTION_ERROR, message: message });

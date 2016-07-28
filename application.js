@@ -16,16 +16,20 @@
   var CHANGE_MQTT_TLS = 11;
   var CHANGE_MQTT_AUTHENTICATION = 12;
   var CHANGE_MQTT_AUTH_MODE = 13;
+  var CHANGE_MQTT_USERNAME = 14;
+  var CHANGE_MQTT_PASSWORD = 15;
+  var CHANGE_MQTT_CERTIFICATE = 16;
+  var CHANGE_MQTT_SECRET_KEY = 17;
 
-  var NOT_SCANNED = 14;
-  var SCANNING = 15;
-  var SCANNING_COMPLETE = 16;
-  var SAVING = 17;
-  var CONNECTED = 18;
-  var CONNECTION_ERROR = 19;
+  var NOT_SCANNED = 18;
+  var SCANNING = 19;
+  var SCANNING_COMPLETE = 20;
+  var SAVING = 21;
+  var CONNECTED = 22;
+  var CONNECTION_ERROR = 23;
 
-  var WIFI_SCAN = 20;
-  var WIFI_MANUAL = 21;
+  var WIFI_SCAN = 24;
+  var WIFI_MANUAL = 25;
 
   // The "store"
   var state = {}
@@ -290,6 +294,8 @@
       deviceName: function(state, action) {
         if(isUndefined(state)) {
           state = initialiseTextField();
+          state.value = "garage";
+          state.valid = true;
         }
 
         if(action.type == CHANGE_MQTT_DEVICE_NAME) {
@@ -298,7 +304,7 @@
           return validate(assign({}, state, {
             value: action.value,
             changed: true
-          }), [ validatePresence(), validateLength(64) ]);
+          }), [ validatePresence(), validateLength(32) ]);
         }
 
         return state;
@@ -313,8 +319,7 @@
           return validate(assign({}, state, {
             changed: true,
             value: action.value
-          }), [ validatePresence(), validateLength(64) ]);
-          return result;
+          }), [ validatePresence(), validateLength(32) ]);
         }
 
         return state;
@@ -323,6 +328,8 @@
       port: function(state, action) {
         if(isUndefined(state)) {
           state = initialiseTextField();
+          state.value = 1883;
+          state.valid = true;
           state.nonce = '';
         }
 
@@ -365,7 +372,67 @@
         }
 
         return state;
-      }
+      },
+
+      username: function(state, action) {
+        if(isUndefined(state)) {
+          state = initialiseTextField();
+        }
+
+        if(action.type == CHANGE_MQTT_USERNAME) {
+          return validate(assign({}, state, {
+            changed: true,
+            value: action.value
+          }), [ validatePresence(), validateLength(32) ]);
+        }
+
+        return state;
+      },
+
+      password: function(state, action) {
+        if(isUndefined(state)) {
+          state = initialiseTextField();
+        }
+
+        if(action.type == CHANGE_MQTT_PASSWORD) {
+          return validate(assign({}, state, {
+            changed: true,
+            value: action.value
+          }), [ validatePresence(), validateLength(32) ]);
+        }
+
+        return state;
+      },
+
+      certificate: function(state, action) {
+        if(isUndefined(state)) {
+          state = initialiseTextField();
+        }
+
+        if(action.type == CHANGE_MQTT_CERTIFICATE) {
+          return validate(assign({}, state, {
+            changed: true,
+            value: action.value
+          }), [ validatePresence() ]);
+        }
+
+        return state;
+      },
+
+      secretKey: function(state, action) {
+        if(isUndefined(state)) {
+          state = initialiseTextField();
+        }
+
+        if(action.type == CHANGE_MQTT_SECRET_KEY) {
+          return validate(assign({}, state, {
+            changed: true,
+            value: action.value
+          }), [ validatePresence() ]);
+        }
+
+        return state;
+      },
     }
   }
 
@@ -597,19 +664,52 @@
 
     function render_button_disabled(changes) {
       var wifi = changes.wifi;
+      var mqtt = changes.mqtt;
 
       if(wifi.scan._same &&
          wifi.connection._same &&
          wifi.encryption.scan._same &&
          wifi.passkey.valid._same &&
          wifi.networkName.value._same &&
-         wifi.encryption.manual._same) return;
+         wifi.encryption.manual._same &&
+         mqtt.deviceName.valid._same &&
+         mqtt.server.valid._same &&
+         mqtt.port.valid._same &&
+         mqtt.authenticate._same &&
+         mqtt.username.valid._same &&
+         mqtt.password.valid._same &&
+         mqtt.certificate.valid._same &&
+         mqtt.secretKey.valid._same) return;
 
       var button = getElementById('button');
 
+      var wifiValid, mqttValid;
+
       if(wifi.scan._val && wifi.connection._val === SCANNING_COMPLETE && (wifi.encryption.scan._val === 7 || wifi.passkey.valid._val)) {
-        enable(button);
+        wifiValid = true;
       } else if(!wifi.scan._val && wifi.networkName.valid._val && (wifi.encryption.manual._val === 7 || wifi.passkey.valid._val)) {
+        wifiValid = true;
+      } else {
+        wifiValid = false;
+      }
+
+      if(mqtt.deviceName.valid._val && mqtt.server.valid._val && mqtt.port.valid._val) {
+        switch(mqtt.authenticate._val) {
+          case 0:
+            mqttValid = true;
+            break
+          case 1:
+            mqttValid = mqtt.username.valid._val && mqtt.password.valid._val;
+            break;
+          case 2:
+            mqttValid = mqtt.certificate.valid._val && mqtt.secretKey.valid._val;
+            break;
+        }
+      } else {
+        mqttValid = false;
+      }
+
+      if(wifiValid && mqttValid) {
         enable(button);
       } else {
         disable(button);
@@ -619,7 +719,7 @@
     function render_button_val(changes) {
       var connection = changes.wifi.connection;
       if(connection._same) return;
-      innerHTML(getElementById('button'), connection._val === SAVING ? "Connecting..." : "Connect");
+      innerHTML(getElementById('button'), connection._val === SAVING ? "Saving..." : "Save");
     },
 
     function render_notification(changes) {
@@ -718,7 +818,43 @@
       } else {
         el.value = val;
       }
-    }
+    },
+
+    function render_username(changes) {
+      var username = changes.mqtt.username;
+
+      if(username._same) return;
+      var el = getElementById('mqttUsername');
+      renderTextInputValue(el, username.value._val);
+      renderError(getElementById('mqttUsername-error'), username);
+    },
+
+    function render_password(changes) {
+      var password = changes.mqtt.password;
+
+      if(password._same) return;
+      var el = getElementById('mqttPassword');
+      renderTextInputValue(el, password.value._val);
+      renderError(getElementById('mqttPassword-error'), password);
+    },
+
+    function render_certificate(changes) {
+      var certificate = changes.mqtt.certificate;
+
+      if(certificate._same) return;
+      var el = getElementById('mqttCert');
+      renderTextInputValue(el, certificate.value._val);
+      renderError(getElementById('mqttCert-error'), certificate);
+    },
+
+    function render_secretKey(changes) {
+      var secretKey = changes.mqtt.secretKey;
+
+      if(secretKey._same) return;
+      var el = getElementById('mqttCertKey');
+      renderTextInputValue(el, secretKey.value._val);
+      renderError(getElementById('mqttCertKey-error'), secretKey);
+    },
   ];
 
   function render(changes) {
@@ -811,6 +947,10 @@
   addEventListener(getElementById('mqttDeviceName'), 'input', changeEvent(CHANGE_MQTT_DEVICE_NAME));
   addEventListener(getElementById('mqttServer'), 'input', changeEvent(CHANGE_MQTT_SERVER));
   addEventListener(getElementById('mqttPort'), 'input', changeEvent(CHANGE_MQTT_PORT));
+  addEventListener(getElementById('mqttUsername'), 'input', changeEvent(CHANGE_MQTT_USERNAME));
+  addEventListener(getElementById('mqttPassword'), 'input', changeEvent(CHANGE_MQTT_PASSWORD));
+  addEventListener(getElementById('mqttCert'), 'input', changeEvent(CHANGE_MQTT_CERTIFICATE));
+  addEventListener(getElementById('mqttCertKey'), 'input', changeEvent(CHANGE_MQTT_SECRET_KEY));
   
   addEventListener(getElementById('scan-network'), 'click', clickEvent(WIFI_SCAN));
   addEventListener(getElementById('manual-network'), 'click', clickEvent(WIFI_MANUAL));

@@ -488,7 +488,6 @@
   function dispatch(action) {
     var oldState = assign({}, state);
     state = reduce(oldState, action);
-    console.log('state', state);
     var changes = checkChanges(oldState, state);
     render(changes);
   }
@@ -809,7 +808,7 @@
       var el = getElementById('mqttPort');
       var val = port.value._val;
       
-      if(val == "" && !port.changed._val) {
+      if(!port.changed._val) {
         if(tls._val || authenticate._val == 2) {
           el.value = 8883;
         } else {
@@ -915,10 +914,19 @@
     }
 
     var mqtt = state.mqtt;
+    var tls = mqtt.tls || mqtt.authenticate == 2;
+
     data.push(buildParam("mqttDeviceName", mqtt.deviceName.value));
     data.push(buildParam("mqttServer", mqtt.server.value));
-    data.push(buildParam("mqttPort", mqtt.port.value));
-    data.push(buildParam("mqttTLS", mqtt.tls ? "1" : "0"));
+
+    // This smells.
+    if(mqtt.port.changed) {
+      data.push(buildParam("mqttPort", mqtt.port.value));
+    } else {
+      data.push(buildParam("mqttPort", tls ? "8883" : "1883"));
+    }
+
+    data.push(buildParam("mqttTLS", tls ? "1" : "0"));
     data.push(buildParam("mqttAuthtype", mqtt.authenticate));
 
     switch(mqtt.authenticate) {

@@ -31,6 +31,27 @@
   var WIFI_SCAN = 24;
   var WIFI_MANUAL = 25;
 
+
+  // Replace common strings with constants so the minifier minifies them
+  var INPUT = "input";
+  var CHANGE = "change"
+  var CLICK = "click";
+
+  var SSID = 'ssid';
+  var SSID_MANUAL = SSID + '-manual';
+  var PASSKEY = 'passkey';
+  var MQTT = 'mqtt';
+  var MQTT_DEVICE_NAME = MQTT + 'DeviceName';
+  var MQTT_SERVER = MQTT + 'Server';
+  var MQTT_PORT = MQTT + 'Port';
+  var MQTT_USERNAME = MQTT + 'Username';
+  var MQTT_PASSWORD = MQTT + 'Password';
+  var MQTT_CERT = MQTT + 'Cert';
+  var MQTT_CERT_KEY = MQTT_CERT + 'Key';
+  var MQTT_TLS = MQTT + 'TLS';
+
+  var DASH_ERROR = '-error';
+
   // The "store"
   var state = {}
 
@@ -587,8 +608,8 @@
       var scan = changes.wifi.scan;
       if(scan._same) return;
       
-      var showOnScan = [ 'ssid', 'manual-network' ];
-      var hideOnScan = [ 'ssid-manual', 'scan-network', 'security-wrapper' ];
+      var showOnScan = [ SSID, 'manual-network' ];
+      var hideOnScan = [ SSID_MANUAL, 'scan-network', 'security-wrapper' ];
 
       for(var i = 0; i < showOnScan.length; i++) {
         var id = showOnScan[i];
@@ -617,7 +638,7 @@
       var connection = changes.wifi.connection;
       if(connection._same) return;
 
-      var ssid = getElementById('ssid');
+      var ssid = getElementById(SSID);
       switch(connection._val) {
         case NOT_SCANNED:
         case SCANNING:
@@ -632,16 +653,16 @@
       var networkName = changes.wifi.networkName;
       var value = networkName.value;
       if(value._same) return;
-      renderTextInputValue(getElementById('ssid-manual'), value._val);
-      renderError(getElementById('ssid-error'), networkName);
+      renderTextInputValue(getElementById(SSID_MANUAL), value._val);
+      renderError(getElementById(SSID + DASH_ERROR), networkName);
     },
 
     function render_passkey_val(changes) {
       var passkey = changes.wifi.passkey;
       var value = passkey.value;
       if(value._same) return;
-      renderTextInputValue(getElementById('passkey'), value._val);
-      renderError(getElementById('passkey-error'), passkey);
+      renderTextInputValue(getElementById(PASSKEY), value._val);
+      renderError(getElementById(PASSKEY + DASH_ERROR), passkey);
     },
 
     function render_passkey_visible(changes) {
@@ -752,7 +773,7 @@
 
       //if(tls._same && authenticate._same) return;
 
-      var el = getElementById('mqttTLS');
+      var el = getElementById(MQTT_TLS);
       el.checked = tls._val || authenticate._val == 2;
     },
 
@@ -784,18 +805,18 @@
       var deviceName = changes.mqtt.deviceName;
 
       if(deviceName._same) return;
-      var el = getElementById('mqttDeviceName');
+      var el = getElementById(MQTT_DEVICE_NAME);
       renderTextInputValue(el, deviceName.value._val);
-      renderError(getElementById('mqttDeviceName-error'), deviceName);
+      renderError(getElementById(MQTT_DEVICE_NAME + DASH_ERROR), deviceName);
     },
 
     function render_server(changes) {
       var server = changes.mqtt.server;
 
       if(server._same) return;
-      var el = getElementById('mqttServer');
+      var el = getElementById(MQTT_SERVER);
       renderTextInputValue(el, server.value._val);
-      renderError(getElementById('mqttServer-error'), server);
+      renderError(getElementById(MQTT_SERVER + DASH_ERROR), server);
     },
 
     function render_port(changes) {
@@ -805,7 +826,7 @@
 
       if(port._same && tls._same && authenticate._same) return;
 
-      var el = getElementById('mqttPort');
+      var el = getElementById(MQTT_PORT);
       var val = port.value._val;
       
       if(!port.changed._val) {
@@ -823,36 +844,36 @@
       var username = changes.mqtt.username;
 
       if(username._same) return;
-      var el = getElementById('mqttUsername');
+      var el = getElementById(MQTT_USERNAME);
       renderTextInputValue(el, username.value._val);
-      renderError(getElementById('mqttUsername-error'), username);
+      renderError(getElementById(MQTT_USERNAME + DASH_ERROR), username);
     },
 
     function render_password(changes) {
       var password = changes.mqtt.password;
 
       if(password._same) return;
-      var el = getElementById('mqttPassword');
+      var el = getElementById(MQTT_PASSWORD);
       renderTextInputValue(el, password.value._val);
-      renderError(getElementById('mqttPassword-error'), password);
+      renderError(getElementById(MQTT_PASSWORD + DASH_ERROR), password);
     },
 
     function render_certificate(changes) {
       var certificate = changes.mqtt.certificate;
 
       if(certificate._same) return;
-      var el = getElementById('mqttCert');
+      var el = getElementById(MQTT_CERT);
       renderTextInputValue(el, certificate.value._val);
-      renderError(getElementById('mqttCert-error'), certificate);
+      renderError(getElementById(MQTT_CERT + DASH_ERROR), certificate);
     },
 
     function render_secretKey(changes) {
       var secretKey = changes.mqtt.secretKey;
 
       if(secretKey._same) return;
-      var el = getElementById('mqttCertKey');
+      var el = getElementById(MQTT_CERT_KEY);
       renderTextInputValue(el, secretKey.value._val);
-      renderError(getElementById('mqttCertKey-error'), secretKey);
+      renderError(getElementById(MQTT_CERT_KEY + DASH_ERROR), secretKey);
     },
   ];
 
@@ -904,39 +925,39 @@
       ap = wifi.ap.manual;
     }
 
-    data.push(buildParam("ssid", ap.ssid));
+    data.push(buildParam(SSID, ap.ssid));
     if(!wifi.scan) {
       data.push(buildParam("security", ap.encryption));
     }
 
     if(ap.encryption != 7) {
-      data.push(buildParam("passkey", wifi.passkey.value));
+      data.push(buildParam(PASSKEY, wifi.passkey.value));
     }
 
     var mqtt = state.mqtt;
     var tls = mqtt.tls || mqtt.authenticate == 2;
 
-    data.push(buildParam("mqttDeviceName", mqtt.deviceName.value));
-    data.push(buildParam("mqttServer", mqtt.server.value));
+    data.push(buildParam(MQTT_DEVICE_NAME, mqtt.deviceName.value));
+    data.push(buildParam(MQTT_SERVER, mqtt.server.value));
 
     // This smells.
     if(mqtt.port.changed) {
-      data.push(buildParam("mqttPort", mqtt.port.value));
+      data.push(buildParam(MQTT_PORT, mqtt.port.value));
     } else {
-      data.push(buildParam("mqttPort", tls ? "8883" : "1883"));
+      data.push(buildParam(MQTT_PORT, tls ? "8883" : "1883"));
     }
 
-    data.push(buildParam("mqttTLS", tls ? "1" : "0"));
+    data.push(buildParam(MQTT_TLS, tls ? "1" : "0"));
     data.push(buildParam("mqttAuthtype", mqtt.authenticate));
 
     switch(mqtt.authenticate) {
       case 1:
-        data.push(buildParam("mqttUsername", mqtt.username.value));
-        data.push(buildParam("mqttPassword", mqtt.password.value));
+        data.push(buildParam(MQTT_USERNAME, mqtt.username.value));
+        data.push(buildParam(MQTT_PASSWORD, mqtt.password.value));
         break;
       case 2:
-        data.push(buildParam("mqttCert", mqtt.certificate.value));
-        data.push(buildParam("mqttCertKey", mqtt.secretKey.value));
+        data.push(buildParam(MQTT_CERT_KEY, mqtt.certificate.value));
+        data.push(buildParam(MQTT_TLS, mqtt.secretKey.value));
         break;
     }
 
@@ -982,26 +1003,25 @@
     }
   }
 
-  addEventListener(getElementById('ssid'), 'change', changeScanAP);
-  addEventListener(getElementById('ssid-manual'), 'input', changeEvent(CHANGE_MANUAL_AP));
-  addEventListener(getElementById('passkey'), 'input', changeEvent(CHANGE_PASSKEY));
-  addEventListener(getElementById('mqttDeviceName'), 'input', changeEvent(CHANGE_MQTT_DEVICE_NAME));
-  addEventListener(getElementById('mqttServer'), 'input', changeEvent(CHANGE_MQTT_SERVER));
-  addEventListener(getElementById('mqttPort'), 'input', changeEvent(CHANGE_MQTT_PORT));
-  addEventListener(getElementById('mqttUsername'), 'input', changeEvent(CHANGE_MQTT_USERNAME));
-  addEventListener(getElementById('mqttPassword'), 'input', changeEvent(CHANGE_MQTT_PASSWORD));
-  addEventListener(getElementById('mqttCert'), 'input', changeEvent(CHANGE_MQTT_CERTIFICATE));
-  addEventListener(getElementById('mqttCertKey'), 'input', changeEvent(CHANGE_MQTT_SECRET_KEY));
+  addEventListener(getElementById(SSID), CHANGE, changeScanAP);
+  addEventListener(getElementById(SSID_MANUAL), INPUT, changeEvent(CHANGE_MANUAL_AP));
+  addEventListener(getElementById(PASSKEY), INPUT, changeEvent(CHANGE_PASSKEY));
+  addEventListener(getElementById(MQTT_DEVICE_NAME), INPUT, changeEvent(CHANGE_MQTT_DEVICE_NAME));
+  addEventListener(getElementById(MQTT_SERVER), INPUT, changeEvent(CHANGE_MQTT_SERVER));
+  addEventListener(getElementById(MQTT_PORT), INPUT, changeEvent(CHANGE_MQTT_PORT));
+  addEventListener(getElementById(MQTT_USERNAME), INPUT, changeEvent(CHANGE_MQTT_USERNAME));
+  addEventListener(getElementById(MQTT_PASSWORD), INPUT, changeEvent(CHANGE_MQTT_PASSWORD));
+  addEventListener(getElementById(MQTT_CERT), INPUT, changeEvent(CHANGE_MQTT_CERTIFICATE));
+  addEventListener(getElementById(MQTT_CERT_KEY), INPUT, changeEvent(CHANGE_MQTT_SECRET_KEY));
   
-  addEventListener(getElementById('scan-network'), 'click', clickEvent(WIFI_SCAN));
-  addEventListener(getElementById('manual-network'), 'click', clickEvent(WIFI_MANUAL));
-  addEventListener(getElementById('security'), 'change', changeEvent(CHANGE_SECURITY));
+  addEventListener(getElementById('scan-network'), CLICK, clickEvent(WIFI_SCAN));
+  addEventListener(getElementById('manual-network'), CLICK, clickEvent(WIFI_MANUAL));
+  addEventListener(getElementById('security'), CHANGE, changeEvent(CHANGE_SECURITY));
   
-  addEventListener(getElementById('mqttServer'), 'change', changeEvent(CHANGE_MQTT_SERVER));
-  addEventListener(getElementById('mqttTLS'), 'change', changeCheckboxEvent(CHANGE_MQTT_TLS));
-  addEventListener(getElementById('mqttAuthMode-none'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
-  addEventListener(getElementById('mqttAuthMode-username'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
-  addEventListener(getElementById('mqttAuthMode-certificate'), 'change', changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
+  addEventListener(getElementById(MQTT_TLS), CHANGE, changeCheckboxEvent(CHANGE_MQTT_TLS));
+  addEventListener(getElementById('mqttAuthMode-none'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
+  addEventListener(getElementById('mqttAuthMode-username'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
+  addEventListener(getElementById('mqttAuthMode-certificate'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
 
   addEventListener(getElementById('form'), 'submit', onSave);
 

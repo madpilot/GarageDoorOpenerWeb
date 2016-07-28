@@ -20,16 +20,17 @@
   var CHANGE_MQTT_PASSWORD = 15;
   var CHANGE_MQTT_CERTIFICATE = 16;
   var CHANGE_MQTT_SECRET_KEY = 17;
+  var CHANGE_MQTT_FINGERPRINT = 18;
 
-  var NOT_SCANNED = 18;
-  var SCANNING = 19;
-  var SCANNING_COMPLETE = 20;
-  var SAVING = 21;
-  var CONNECTED = 22;
-  var CONNECTION_ERROR = 23;
+  var NOT_SCANNED = 19;
+  var SCANNING = 20;
+  var SCANNING_COMPLETE = 21;
+  var SAVING = 22;
+  var CONNECTED = 23;
+  var CONNECTION_ERROR = 24;
 
-  var WIFI_SCAN = 24;
-  var WIFI_MANUAL = 25;
+  var WIFI_SCAN = 25;
+  var WIFI_MANUAL = 26;
 
 
   // Replace common strings with constants so the minifier minifies them
@@ -48,6 +49,7 @@
   var MQTT_PASSWORD = MQTT + 'Password';
   var MQTT_CERT = MQTT + 'Cert';
   var MQTT_CERT_KEY = MQTT_CERT + 'Key';
+  var MQTT_FINGERPRINT = MQTT + 'Fingerprint';
   var MQTT_TLS = MQTT + 'TLS';
 
   var DASH_ERROR = '-error';
@@ -450,6 +452,21 @@
             changed: true,
             value: action.value
           }), [ validatePresence() ]);
+        }
+
+        return state;
+      },
+
+      fingerprint: function(state, action) {
+        if(isUndefined(state)) {
+          state = initialiseTextField();
+        }
+
+        if(action.type == CHANGE_MQTT_FINGERPRINT) {
+          return validate(assign({}, state, {
+            changed: true,
+            value: action.value
+          }), []);
         }
 
         return state;
@@ -875,6 +892,29 @@
       renderTextInputValue(el, secretKey.value._val);
       renderError(getElementById(MQTT_CERT_KEY + DASH_ERROR), secretKey);
     },
+
+    function render_fingerprint(changes) {
+      var fingerprint = changes.mqtt.fingerprint;
+
+      if(fingerprint._same) return;
+      var el = getElementById(MQTT_FINGERPRINT);
+      renderTextInputValue(el, fingerprint.value._val);
+      renderError(getElementById(MQTT_FINGERPRINT + DASH_ERROR), fingerprint);
+    },
+
+    function render_finderprint_visible(changes) {
+      var tls = changes.mqtt.tls;
+      var authenticate = changes.mqtt.authenticate;
+
+      if(tls._same && authenticate._same) return;
+
+      var el = getElementById(MQTT_FINGERPRINT + "-wrapper");
+      if(tls._val || authenticate._val == 2) {
+        show(el);
+      } else {
+        hide(el);
+      }
+    }
   ];
 
   function render(changes) {
@@ -949,6 +989,9 @@
 
     data.push(buildParam(MQTT_TLS, tls ? "1" : "0"));
     data.push(buildParam("mqttAuthtype", mqtt.authenticate));
+    if(tls) {
+      data.push(buildParam(MQTT_FINGERPRINT, mqtt.fingerprint.value));
+    }
 
     switch(mqtt.authenticate) {
       case 1:
@@ -1013,6 +1056,7 @@
   addEventListener(getElementById(MQTT_PASSWORD), INPUT, changeEvent(CHANGE_MQTT_PASSWORD));
   addEventListener(getElementById(MQTT_CERT), INPUT, changeEvent(CHANGE_MQTT_CERTIFICATE));
   addEventListener(getElementById(MQTT_CERT_KEY), INPUT, changeEvent(CHANGE_MQTT_SECRET_KEY));
+  addEventListener(getElementById(MQTT_FINGERPRINT), INPUT, changeEvent(CHANGE_MQTT_FINGERPRINT));
   
   addEventListener(getElementById('scan-network'), CLICK, clickEvent(WIFI_SCAN));
   addEventListener(getElementById('manual-network'), CLICK, clickEvent(WIFI_MANUAL));

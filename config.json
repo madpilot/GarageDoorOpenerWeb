@@ -1,1 +1,1 @@
-{"ssid":"Burntos","passkey":"BellsDiner","mqttDeviceName":"garage","mqttServer":"server.local","mqttPort":"8883","mqttTLS":"1","mqttAuthMode":2,"mqttFingerprint":"fingerprint","mqttCertKey":"key"}
+{"ssid":"Burntos","passkey":"BellsDiner","mqttDeviceName":"garage","mqttServer":"server.local","mqttPort":"8883","mqttTLS":"1","mqttAuthMode":"2","mqttFingerprint":"fingerprint","mqCert":"cert","mqttCertKey":"key"}

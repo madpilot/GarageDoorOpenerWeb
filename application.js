@@ -57,6 +57,10 @@
 
   var DASH_ERROR = '-error';
 
+  var AUTH_MODE_NONE = '0';
+  var AUTH_MODE_USERNAME = '1';
+  var AUTH_MODE_CERTIFICATE = '2';
+
   // The "store"
   var state = {}
 
@@ -390,7 +394,7 @@
 
       authMode: function(state, action) {
         if(isUndefined(state)) {
-          state = 0;
+          state = "0";
         }
 
         if(action.type === CHANGE_MQTT_AUTH_MODE) {
@@ -735,13 +739,13 @@
 
       if(mqtt.deviceName.valid._val && mqtt.server.valid._val && mqtt.port.valid._val) {
         switch(mqtt.authMode._val) {
-          case 0:
+          case AUTH_MODE_NONE:
             mqttValid = true;
             break
-          case 1:
+          case AUTH_MODE_USERNAME:
             mqttValid = mqtt.username.valid._val && mqtt.password.valid._val;
             break;
-          case 2:
+          case AUTH_MODE_CERTIFICATE:
             mqttValid = mqtt.certificate.valid._val && mqtt.secretKey.valid._val;
             break;
         }
@@ -794,7 +798,7 @@
       //if(tls._same && authMode._same) return;
 
       var el = getElementById(MQTT_TLS);
-      el.checked = tls._val || authMode._val == 2;
+      el.checked = tls._val || authMode._val == AUTH_MODE_CERTIFICATE;
     },
 
     function render_mqtt_authentication_visible(changes) {
@@ -806,15 +810,15 @@
       var certificate = getElementById('mqttAuthType-certificate');
 
       switch(authMode._val) {
-        case 0:
+        case AUTH_MODE_NONE:
           hide(password);
           hide(certificate);
           break;
-        case 1:
+        case AUTH_MODE_USERNAME:
           show(password);
           hide(certificate);
           break;
-        case 2:
+        case AUTH_MODE_CERTIFICATE:
           hide(password);
           show(certificate);
           break;
@@ -850,7 +854,7 @@
       var val = port.value._val;
 
       if(!port.changed._val) {
-        if(tls._val || authMode._val == 2) {
+        if(tls._val || authMode._val == AUTH_MODE_CERTIFICATE) {
           el.value = 8883;
         } else {
           el.value = 1883;
@@ -912,7 +916,7 @@
       if(tls._same && authMode._same) return;
 
       var el = getElementById(MQTT_FINGERPRINT + "-wrapper");
-      if(tls._val || authMode._val == 2) {
+      if(tls._val || authMode._val == AUTH_MODE_CERTIFICATE) {
         show(el);
       } else {
         hide(el);
@@ -949,7 +953,6 @@
     mapping[MQTT_CERT_KEY] = CHANGE_MQTT_CERT_KEY;
     mapping[MQTT_FINGERPRINT] = CHANGE_MQTT_FINGERPRINT;
 
-    console.log(mapping);
     for(var key in json) {
       dispatch({ type: mapping[key], value: json[key] });
     }
@@ -1007,7 +1010,7 @@
     }
 
     var mqtt = state.mqtt;
-    var tls = mqtt.tls || mqtt.authMode == 2;
+    var tls = mqtt.tls || mqtt.authMode == AUTH_MODE_CERTIFICATE;
 
     data[MQTT_DEVICE_NAME] = mqtt.deviceName.value;
     data[MQTT_SERVER] = mqtt.server.value;
@@ -1026,11 +1029,11 @@
     }
 
     switch(mqtt.authMode) {
-      case 1:
+      case AUTH_MODE_USERNAME:
         data[MQTT_USERNAME] = mqtt.username.value;
         data[MQTT_PASSWORD] = mqtt.password.value;
         break;
-      case 2:
+      case AUTH_MODE_CERTIFICATE:
         data[MQTT_CERT_KEY] = mqtt.certificate.value;
         data[MQTT_CERT_KEY] = mqtt.secretKey.value;
         break;
@@ -1095,9 +1098,9 @@
   addEventListener(getElementById('security'), CHANGE, changeEvent(CHANGE_SECURITY));
 
   addEventListener(getElementById(MQTT_TLS), CHANGE, changeCheckboxEvent(CHANGE_MQTT_TLS));
-  addEventListener(getElementById('mqttAuthMode-none'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
-  addEventListener(getElementById('mqttAuthMode-username'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
-  addEventListener(getElementById('mqttAuthMode-certificate'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE, parseInt));
+  addEventListener(getElementById('mqttAuthMode-none'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE));
+  addEventListener(getElementById('mqttAuthMode-username'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE));
+  addEventListener(getElementById('mqttAuthMode-certificate'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE));
 
   addEventListener(getElementById('form'), 'submit', onSave);
 

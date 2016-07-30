@@ -10,7 +10,7 @@
 
   var CHANGE_SCAN_AP = 6;
   var CHANGE_MANUAL_AP = 7;
-  var CHANGE_SECURITY = 8;
+  var CHANGE_ENCRYPTION = 8;
   var CHANGE_PASSKEY = 9;
 
   var CHANGE_MQTT_DEVICE_NAME = 10;
@@ -43,6 +43,7 @@
   var SSID = 'ssid';
   var SSID_MANUAL = SSID + '-manual';
   var PASSKEY = 'passkey';
+  var ENCRYPTION = 'encryption';
   var MQTT = 'mqtt';
   var MQTT_DEVICE_NAME = MQTT + 'DeviceName';
   var MQTT_SERVER = MQTT + 'Server';
@@ -60,6 +61,11 @@
   var AUTH_MODE_NONE = '0';
   var AUTH_MODE_USERNAME = '1';
   var AUTH_MODE_CERTIFICATE = '2';
+
+  var ENCRYPTION_NONE = "7";
+  var ENCRYPTION_WEP = "1";
+  var ENCRYPTION_WPA_PERSONAL = "2";
+  var ENCRYPTION_WPA2_PERSONAL = "4";
 
   // The "store"
   var state = {}
@@ -186,7 +192,7 @@
         manual: function(state, action) {
           if(isUndefined(state)) {
             state = {
-              encryption: 7,
+              encryption: ENCRYPTION_NONE,
               ssid: ''
             }
           }
@@ -196,7 +202,7 @@
             var result = assign({}, state);
             result.ssid = action.value;
             return result;
-          case CHANGE_SECURITY:
+          case CHANGE_ENCRYPTION:
             var result = assign({}, state);
             result.encryption = action.value;
             return result;
@@ -230,10 +236,10 @@
 
         manual: function(state, action) {
           if(isUndefined(state)) {
-            state = 7;
+            state = ENCRYPTION_NONE;
           }
 
-          if(action.type == CHANGE_SECURITY) {
+          if(action.type == CHANGE_ENCRYPTION) {
             return action.value;
           }
 
@@ -633,7 +639,7 @@
       if(scan._same) return;
 
       var showOnScan = [ SSID, 'manual-network' ];
-      var hideOnScan = [ SSID_MANUAL, 'scan-network', 'security-wrapper' ];
+      var hideOnScan = [ SSID_MANUAL, 'scan-network', 'encryption-wrapper' ];
 
       for(var i = 0; i < showOnScan.length; i++) {
         var id = showOnScan[i];
@@ -697,9 +703,9 @@
 
       var passkey = getElementById('passkey-wrapper');
 
-      if(scan._val && encryption.scan._val == 7) {
+      if(scan._val && encryption.scan._val == ENCRYPTION_NONE) {
         hide(passkey);
-      } else if(!scan._val && encryption.manual._val == 7) {
+      } else if(!scan._val && encryption.manual._val == ENCRYPTION_NONE) {
         hide(passkey);
       } else {
         show(passkey);
@@ -729,9 +735,9 @@
 
       var wifiValid, mqttValid;
 
-      if(wifi.scan._val && wifi.connection._val === SCANNING_COMPLETE && (wifi.encryption.scan._val === 7 || wifi.passkey.valid._val)) {
+      if(wifi.scan._val && wifi.connection._val === SCANNING_COMPLETE && (wifi.encryption.scan._val === ENCRYPTION_NONE || wifi.passkey.valid._val)) {
         wifiValid = true;
-      } else if(!wifi.scan._val && wifi.networkName.valid._val && (wifi.encryption.manual._val === 7 || wifi.passkey.valid._val)) {
+      } else if(!wifi.scan._val && wifi.networkName.valid._val && (wifi.encryption.manual._val === ENCRYPTION_NONE || wifi.passkey.valid._val)) {
         wifiValid = true;
       } else {
         wifiValid = false;
@@ -942,6 +948,7 @@
     var mapping = {}
     mapping[SSID] = CHANGE_MANUAL_AP;
     mapping[PASSKEY] = CHANGE_PASSKEY;
+    mapping[ENCRYPTION] = CHANGE_ENCRYPTION;
     mapping[MQTT_DEVICE_NAME] = CHANGE_MQTT_DEVICE_NAME;
     mapping[MQTT_SERVER] = CHANGE_MQTT_SERVER;
     mapping[MQTT_PORT] = CHANGE_MQTT_PORT;
@@ -956,6 +963,7 @@
     for(var key in json) {
       dispatch({ type: mapping[key], value: json[key] });
     }
+    console.log(state);
   }
 
   function getConfig() {
@@ -1002,10 +1010,10 @@
 
     data[SSID] = ap.ssid;
     if(!wifi.scan) {
-      data["security"] = ap.encryption;
+      data[ENCRYPTION] = ap.encryption;
     }
 
-    if(ap.encryption != 7) {
+    if(ap.encryption != ENCRYPTION_NONE) {
       data[PASSKEY] = wifi.passkey.value;
     }
 
@@ -1095,7 +1103,7 @@
 
   addEventListener(getElementById('scan-network'), CLICK, clickEvent(WIFI_SCAN));
   addEventListener(getElementById('manual-network'), CLICK, clickEvent(WIFI_MANUAL));
-  addEventListener(getElementById('security'), CHANGE, changeEvent(CHANGE_SECURITY));
+  addEventListener(getElementById(ENCRYPTION), CHANGE, changeEvent(CHANGE_ENCRYPTION));
 
   addEventListener(getElementById(MQTT_TLS), CHANGE, changeCheckboxEvent(CHANGE_MQTT_TLS));
   addEventListener(getElementById('mqttAuthMode-none'), CHANGE, changeEvent(CHANGE_MQTT_AUTH_MODE));

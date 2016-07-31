@@ -66,6 +66,12 @@
   var ENCRYPTION_WEP = "1";
   var ENCRYPTION_WPA_PERSONAL = "2";
   var ENCRYPTION_WPA2_PERSONAL = "4";
+  
+  var TLS_ON = "1";
+  var TLS_OFF = "0";
+
+  var MQTT_PORT_NUMBER = 1883;
+  var MQTT_TLS_PORT_NUMBER = 8883;
 
   // The "store"
   var state = {}
@@ -144,6 +150,9 @@
   }
 
   function validate(obj, validators) {
+    if(!obj.changed) {
+      return obj;
+    }
     obj = assign({}, obj, {
       valid: true,
       error: null
@@ -339,7 +348,7 @@
 
           return validate(assign({}, state, {
             value: action.value,
-            changed: true
+            changed: !action.fromConfig,
           }), [ validatePresence(), validateLength(32) ]);
         }
 
@@ -353,7 +362,7 @@
 
         if(action.type == CHANGE_MQTT_SERVER) {
           return validate(assign({}, state, {
-            changed: true,
+            changed: !action.fromConfig,
             value: action.value
           }), [ validatePresence(), validateLength(32) ]);
         }
@@ -364,12 +373,14 @@
       port: function(state, action) {
         if(isUndefined(state)) {
           state = initialiseTextField();
-          state.value = 1883;
+          state.prevVal = MQTT_PORT_NUMBER;
+          state.value = MQTT_PORT_NUMBER;
           state.valid = true;
           state.nonce = '';
         }
 
-        if(action.type == CHANGE_MQTT_PORT) {
+        switch(action.type) {
+        case CHANGE_MQTT_PORT:
           var value = parseInt(action.value.replace(/\D*|\-*/g, ''));
 
           if(isNaN(value)) {
@@ -377,10 +388,30 @@
           }
 
           return validate(assign({}, state, {
-            changed: true,
+            changed: !action.fromConfig,
             nonce: (new Date()).getTime(),
+            prevVal: value,
             value: value
           }), [ validatePresence(), validateLength(5) ]);
+        
+        case CHANGE_MQTT_TLS:
+         if(!state.changed) {
+            var value = action.value == TLS_ON ? MQTT_TLS_PORT_NUMBER : MQTT_PORT_NUMBER;
+            
+            return assign({}, state, {
+              prevVal: value,
+              value: value
+            });
+          }
+       
+        case CHANGE_MQTT_AUTH_MODE:
+          if(!state.changed) {
+            var value = action.value == AUTH_MODE_CERTIFICATE ? MQTT_TLS_PORT_NUMBER : state.prevVal;
+            
+            return assign({}, state, {
+              value: value
+            });
+          }
         }
 
         return state;
@@ -388,11 +419,25 @@
 
       tls: function(state, action) {
         if(isUndefined(state)) {
-          state = false;
+          state = {
+            ui: TLS_OFF,
+            value: false
+          }
         }
 
-        if(action.type === CHANGE_MQTT_TLS) {
-          return action.value;
+        switch(action.type) {
+        case CHANGE_MQTT_TLS:
+          return {
+            ui: action.value,
+            value: action.value == TLS_ON
+          }
+        case CHANGE_MQTT_AUTH_MODE:
+          var cert = action.value == AUTH_MODE_CERTIFICATE;
+          var current = state.ui == TLS_ON;
+          
+          return assign({}, state, {
+            value: cert ? true : current
+          });
         }
 
         return state;
@@ -417,7 +462,7 @@
 
         if(action.type == CHANGE_MQTT_USERNAME) {
           return validate(assign({}, state, {
-            changed: true,
+            changed: !action.fromConfig,
             value: action.value
           }), [ validatePresence(), validateLength(32) ]);
         }
@@ -432,7 +477,7 @@
 
         if(action.type == CHANGE_MQTT_PASSWORD) {
           return validate(assign({}, state, {
-            changed: true,
+            changed: !action.fromConfig,
             value: action.value
           }), [ validatePresence(), validateLength(32) ]);
         }
@@ -447,7 +492,7 @@
 
         if(action.type == CHANGE_MQTT_CERT) {
           return validate(assign({}, state, {
-            changed: true,
+            changed: !action.fromConfig,
             value: action.value
           }), [ validatePresence() ]);
         }
@@ -462,7 +507,7 @@
 
         if(action.type == CHANGE_MQTT_CERT_KEY) {
           return validate(assign({}, state, {
-            changed: true,
+            changed: !action.fromConfig,
             value: action.value
           }), [ validatePresence() ]);
         }
@@ -477,7 +522,7 @@
 
         if(action.type == CHANGE_MQTT_FINGERPRINT) {
           return validate(assign({}, state, {
-            changed: true,
+            changed: !action.fromConfig,
             value: action.value
           }), []);
         }
@@ -695,6 +740,13 @@
       renderError(getElementById(PASSKEY + DASH_ERROR), passkey);
     },
 
+    function render_encryption(changes) {
+      var encryption = changes.wifi.encryption;
+      if(encryption._same) return;
+      var el = getElementById(ENCRYPTION);
+      el.value = encryption.manual._val;
+    },
+
     function render_passkey_visible(changes) {
       var encryption = changes.wifi.encryption;
       var scan = changes.wifi.scan;
@@ -799,12 +851,9 @@
 
     function render_tls(changes) {
       var tls = changes.mqtt.tls;
-      var authMode = changes.mqtt.authMode;
-
-      //if(tls._same && authMode._same) return;
-
+      if(tls._same) return;
       var el = getElementById(MQTT_TLS);
-      el.checked = tls._val || authMode._val == AUTH_MODE_CERTIFICATE;
+      el.checked = tls.value._val || tls.ui.val == TLS_ON;
     },
 
     function render_mqtt_authentication_visible(changes) {
@@ -851,23 +900,11 @@
 
     function render_port(changes) {
       var port = changes.mqtt.port;
-      var tls = changes.mqtt.tls;
-      var authMode = changes.mqtt.authMode;
 
-      if(port._same && tls._same && authMode._same) return;
+      if(port._same) return;
 
       var el = getElementById(MQTT_PORT);
-      var val = port.value._val;
-
-      if(!port.changed._val) {
-        if(tls._val || authMode._val == AUTH_MODE_CERTIFICATE) {
-          el.value = 8883;
-        } else {
-          el.value = 1883;
-        }
-      } else {
-        el.value = val;
-      }
+      el.value = port.value._val;
     },
 
     function render_username(changes) {
@@ -917,12 +954,11 @@
 
     function render_finderprint_visible(changes) {
       var tls = changes.mqtt.tls;
-      var authMode = changes.mqtt.authMode;
 
-      if(tls._same && authMode._same) return;
+      if(tls._same) return;
 
       var el = getElementById(MQTT_FINGERPRINT + "-wrapper");
-      if(tls._val || authMode._val == AUTH_MODE_CERTIFICATE) {
+      if(tls.value._val) {
         show(el);
       } else {
         hide(el);
@@ -961,9 +997,12 @@
     mapping[MQTT_FINGERPRINT] = CHANGE_MQTT_FINGERPRINT;
 
     for(var key in json) {
-      dispatch({ type: mapping[key], value: json[key] });
+      if(typeof(mapping[key]) !== "undefined") {
+        dispatch({ type: mapping[key], value: json[key], fromConfig: true });
+      }
     }
-    console.log(state);
+    
+    dispatch({ type: json.scan ? WIFI_SCAN : WIFI_MANUAL });
   }
 
   function getConfig() {
@@ -1018,37 +1057,23 @@
     }
 
     var mqtt = state.mqtt;
-    var tls = mqtt.tls || mqtt.authMode == AUTH_MODE_CERTIFICATE;
+    var tls = mqtt.tls.value;
 
     data[MQTT_DEVICE_NAME] = mqtt.deviceName.value;
     data[MQTT_SERVER] = mqtt.server.value;
-
-    // This smells.
-    if(mqtt.port.changed) {
-      data[MQTT_PORT] = mqtt.port.value;
-    } else {
-      data[MQTT_PORT] = tls ? "8883" : "1883";
-    }
+    data[MQTT_PORT] = mqtt.port.value.toString();
 
     data[MQTT_TLS] = tls ? "1" : "0";
-    data[MQTT_AUTH_MODE] = mqtt.authMode;
-    if(tls) {
-      data[MQTT_FINGERPRINT] = mqtt.fingerprint.value;
-    }
+    data[MQTT_FINGERPRINT] = mqtt.fingerprint.value;
 
-    switch(mqtt.authMode) {
-      case AUTH_MODE_USERNAME:
-        data[MQTT_USERNAME] = mqtt.username.value;
-        data[MQTT_PASSWORD] = mqtt.password.value;
-        break;
-      case AUTH_MODE_CERTIFICATE:
-        data[MQTT_CERT_KEY] = mqtt.certificate.value;
-        data[MQTT_CERT_KEY] = mqtt.secretKey.value;
-        break;
-    }
+    data[MQTT_AUTH_MODE] = mqtt.authMode;
+    data[MQTT_USERNAME] = mqtt.username.value;
+    data[MQTT_PASSWORD] = mqtt.password.value;
+    data[MQTT_CERT] = mqtt.certificate.value;
+    data[MQTT_CERT_KEY] = mqtt.secretKey.value;
 
     dispatch({ type: SAVING });
-
+    
     ajax("/save", "POST", JSON.stringify(data), function() {
       dispatch({ type: CONNECTED });
     }, function(message) {

@@ -25,7 +25,7 @@
             </label>
           	<span class="wrapper">
               <select id="ssid" disabled><option>Scanning...</option></select>
-              <input id="ssid-manual" class="hidden" type="text">
+              <input id="ssid-manual" class="hidden" type="text" autocomplete="off" autocapitalize="off">
             </span>
           </div>
 
@@ -45,7 +45,7 @@
               Password
               <span class="inline-error hidden" id="passkey-error"></span>
             </label>
-						<span class="wrapper"><input type="text" id="passkey" name="passkey"></span>
+						<span class="wrapper"><input type="text" id="passkey" name="passkey" autocomplete="off" autocapitalize="off"></span>
           </div>
         </section>
 
@@ -56,7 +56,7 @@
               Device Name
               <span class="inline-error hidden" id="mqttDeviceName-error"></span>
             </label>
-            <span class="wrapper"><input type="text" id="mqttDeviceName" name="mqttDeviceName" placeholder="garage" value="garage"></span>
+            <span class="wrapper"><input type="text" id="mqttDeviceName" name="mqttDeviceName" placeholder="garage" value="garage" autocomplete="off" autocapitalize="off"></span>
           </div>
 
           <div class="mqtt-server-container">
@@ -65,7 +65,7 @@
                 Server
                 <span class="inline-error hidden" id="mqttServer-error"></span>
               </label>
-              <span class="wrapper"><input type="text" id="mqttServer" name="mqttServer" placeholder="server.local"></span>
+              <span class="wrapper"><input type="text" id="mqttServer" name="mqttServer" placeholder="server.local" autocomplete="off" autocapitalize="off"></span>
             </div>
             <div class="mqtt-port-wrapper">
               <label for="mqttPort" class="label">
@@ -89,7 +89,7 @@
               Server Fingerprint
               <span class="inline-error hidden" id="mqttFingerprint-error"></span>
             </label>
-            <span class="wrapper"><input type="text" id="mqttFingerprint" name="mqttFingerprint" placeholder="43:51:43:a1:b5:fc:8b:b7:0a:3a:a9:b1:0f:66:73:a8"></span>
+            <span class="wrapper"><input type="text" id="mqttFingerprint" name="mqttFingerprint" placeholder="43:51:43:a1:b5:fc:8b:b7:0a:3a:a9:b1:0f:66:73:a8" autocomplete="false" autocapitalize="off"></span>
           </div>
 
           <div id="mqttAuthMode-wrapper" class="group-wrapper">
@@ -114,7 +114,7 @@
                 Username
                 <span class="inline-error hidden" id="mqttUsername-error"></span>
               </label>
-              <span class="wrapper"><input type="text" id="mqttUsername" name="mqttUsername"></span>
+              <span class="wrapper"><input type="text" id="mqttUsername" name="mqttUsername" autocomplete="false" autocapitalize="off"></span>
             </div>
 
             <div id="mqttPassword-wrapper">
@@ -122,7 +122,7 @@
                 Password
                 <span class="inline-error hidden" id="mqttPassword-error"></span>
               </label>
-              <span class="wrapper"><input type="text" id="mqttPassword" name="mqttPassword"></span>
+              <span class="wrapper"><input type="text" id="mqttPassword" name="mqttPassword" autocomplete="false" autocapitalize="off"></span>
             </div>
           </div>
 
@@ -132,7 +132,7 @@
                 Certificate
                 <span class="inline-error hidden" id="mqttCert-error"></span>
               </label>
-              <span class="textarea-wrapper"><textarea id="mqttCert" name="mqttCert" placeholder="-----BEGIN CERTIFICATE-----"></textarea></span>
+              <span class="textarea-wrapper"><textarea id="mqttCert" name="mqttCert" placeholder="-----BEGIN CERTIFICATE-----" autocomplete="false" autocapitalize="off"></textarea></span>
             </div>
 
             <div id="mqttCertKey-wrapper">
@@ -140,7 +140,7 @@
                 Certificate Key
                 <span class="inline-error hidden" id="mqttCertKey-error"></span>
               </label>
-              <span class="textarea-wrapper"><textarea id="mqttCertKey" name="mqttCertKey" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea></span>
+              <span class="textarea-wrapper"><textarea id="mqttCertKey" name="mqttCertKey" placeholder="-----BEGIN RSA PRIVATE KEY-----" autocomplete="false" autocapitalize="off"></textarea></span>
             </div>
           </div>
         </section>

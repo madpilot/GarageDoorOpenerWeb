@@ -764,6 +764,20 @@
       }
     },
 
+    function render_authMode(changes) {
+      var authMode = changes.mqtt.authMode;
+
+      if(authMode._same) return;
+      
+      var none = getElementById('mqttAuthMode-none');
+      var username = getElementById('mqttAuthMode-username');
+      var certificate = getElementById('mqttAuthMode-certificate');
+
+      none.checked = authMode._val == AUTH_MODE_NONE;
+      username.checked = authMode._val == AUTH_MODE_USERNAME;
+      certificate.checked = authMode._val == AUTH_MODE_CERTIFICATE;
+    },
+
     function render_button_disabled(changes) {
       var wifi = changes.wifi;
       var mqtt = changes.mqtt;
@@ -987,7 +1001,6 @@
     mapping[ENCRYPTION] = CHANGE_ENCRYPTION;
     mapping[MQTT_DEVICE_NAME] = CHANGE_MQTT_DEVICE_NAME;
     mapping[MQTT_SERVER] = CHANGE_MQTT_SERVER;
-    mapping[MQTT_PORT] = CHANGE_MQTT_PORT;
     mapping[MQTT_TLS] = CHANGE_MQTT_TLS;
     mapping[MQTT_AUTH_MODE] = CHANGE_MQTT_AUTH_MODE;
     mapping[MQTT_USERNAME] = CHANGE_MQTT_USERNAME;
@@ -1001,7 +1014,9 @@
         dispatch({ type: mapping[key], value: json[key], fromConfig: true });
       }
     }
-    
+   
+    var defaultPort = json[MQTT_PORT] == "1883" || json[MQTT_PORT] == "8883";
+    dispatch({ type: CHANGE_MQTT_PORT, value: json[MQTT_PORT], fromConfig: defaultPort });
     dispatch({ type: json.scan ? WIFI_SCAN : WIFI_MANUAL });
   }
 

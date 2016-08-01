@@ -348,7 +348,7 @@
 
           return validate(assign({}, state, {
             value: action.value,
-            changed: !action.fromConfig,
+            changed: true
           }), [ validatePresence(), validateLength(32) ]);
         }
 
@@ -362,7 +362,7 @@
 
         if(action.type == CHANGE_MQTT_SERVER) {
           return validate(assign({}, state, {
-            changed: !action.fromConfig,
+            changed: true,
             value: action.value
           }), [ validatePresence(), validateLength(32) ]);
         }
@@ -388,7 +388,7 @@
           }
 
           return validate(assign({}, state, {
-            changed: !action.fromConfig,
+            changed: value != MQTT_PORT_NUMBER && value != MQTT_TLS_PORT_NUMBER,
             nonce: (new Date()).getTime(),
             prevVal: value,
             value: value
@@ -462,7 +462,7 @@
 
         if(action.type == CHANGE_MQTT_USERNAME) {
           return validate(assign({}, state, {
-            changed: !action.fromConfig,
+            changed: true,
             value: action.value
           }), [ validatePresence(), validateLength(32) ]);
         }
@@ -477,7 +477,7 @@
 
         if(action.type == CHANGE_MQTT_PASSWORD) {
           return validate(assign({}, state, {
-            changed: !action.fromConfig,
+            changed: true,
             value: action.value
           }), [ validatePresence(), validateLength(32) ]);
         }
@@ -492,7 +492,7 @@
 
         if(action.type == CHANGE_MQTT_CERT) {
           return validate(assign({}, state, {
-            changed: !action.fromConfig,
+            changed: true,
             value: action.value
           }), [ validatePresence() ]);
         }
@@ -507,7 +507,7 @@
 
         if(action.type == CHANGE_MQTT_CERT_KEY) {
           return validate(assign({}, state, {
-            changed: !action.fromConfig,
+            changed: true,
             value: action.value
           }), [ validatePresence() ]);
         }
@@ -522,7 +522,7 @@
 
         if(action.type == CHANGE_MQTT_FINGERPRINT) {
           return validate(assign({}, state, {
-            changed: !action.fromConfig,
+            changed: true,
             value: action.value
           }), []);
         }
@@ -870,6 +870,18 @@
       el.checked = tls.value._val || tls.ui.val == TLS_ON;
     },
 
+    function render_tls_enabled(changes) {
+      var authMode = changes.mqtt.authMode;
+      if(authMode._same) return;
+      var el = getElementById(MQTT_TLS);
+      if(authMode._val == AUTH_MODE_CERTIFICATE) {
+        el.checked = true;
+        disable(el);
+      } else {
+        enable(el);
+      }
+    },
+
     function render_mqtt_authentication_visible(changes) {
       var authMode = changes.mqtt.authMode;
 
@@ -1001,6 +1013,7 @@
     mapping[ENCRYPTION] = CHANGE_ENCRYPTION;
     mapping[MQTT_DEVICE_NAME] = CHANGE_MQTT_DEVICE_NAME;
     mapping[MQTT_SERVER] = CHANGE_MQTT_SERVER;
+    mapping[MQTT_PORT] = CHANGE_MQTT_PORT;
     mapping[MQTT_TLS] = CHANGE_MQTT_TLS;
     mapping[MQTT_AUTH_MODE] = CHANGE_MQTT_AUTH_MODE;
     mapping[MQTT_USERNAME] = CHANGE_MQTT_USERNAME;
@@ -1011,12 +1024,10 @@
 
     for(var key in json) {
       if(typeof(mapping[key]) !== "undefined") {
-        dispatch({ type: mapping[key], value: json[key], fromConfig: true });
+        dispatch({ type: mapping[key], value: json[key] });
       }
     }
    
-    var defaultPort = json[MQTT_PORT] == "1883" || json[MQTT_PORT] == "8883";
-    dispatch({ type: CHANGE_MQTT_PORT, value: json[MQTT_PORT], fromConfig: defaultPort });
     dispatch({ type: json.scan ? WIFI_SCAN : WIFI_MANUAL });
   }
 

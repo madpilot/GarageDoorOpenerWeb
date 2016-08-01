@@ -850,6 +850,18 @@
       }
     },
 
+    function render_form(changes) {
+     var connection = changes.wifi.connection;
+      if(connection._same) return;
+
+      var form = getElementById('form');
+      if(connection === CONNECTED) {
+        show(form);
+      } else {
+        hide(form);
+      }
+    },
+
     function render_error(changes) {
       var connection = changes.wifi.connection;
       if(connection._same) return;

@@ -62,6 +62,23 @@ form {
   padding-bottom: 1rem;
 }
 
+a, a:active, a:visited {
+  color: #29506D;
+  text-decoration: underline;
+  transition: color linear 0.2s;
+}
+
+a:hover {
+  color: #000;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+p {
+  padding-top: 5px;
+  margin-bottom: 15px;
+}
+
 .scan {
   font-size: 10px;
   float: right;

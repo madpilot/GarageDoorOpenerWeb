@@ -29,11 +29,11 @@
   var SCANNING = 22;
   var SCANNING_COMPLETE = 23;
   var SAVING = 24;
-  var CONNECTED = 25;
-  var CONNECTION_ERROR = 26;
+  var SAVED = 25;
+  var SAVE_ERROR = 26;
 
-  var WIFI_SCAN = 27;
-  var WIFI_MANUAL = 28;
+  var WIFI_SCAN = 28;
+  var WIFI_MANUAL = 29;
 
   // Replace common strings with constants so the minifier minifies them
   var INPUT = "input";
@@ -310,7 +310,7 @@
           state = '';
         }
 
-        if(action.type == CONNECTION_ERROR) {
+        if(action.type == SAVE_ERROR) {
           return action.message
         }
 
@@ -326,8 +326,8 @@
         switch(action.type) {
         case SCANNING:
         case SCANNING_COMPLETE:
-        case CONNECTED:
-        case CONNECTION_ERROR:
+        case SAVED:
+        case SAVE_ERROR:
           return action.type;
         }
 
@@ -843,7 +843,7 @@
       if(connection._same) return;
 
       var notification = getElementById('notification');
-      if(connection === CONNECTED) {
+      if(connection._val === SAVED) {
         show(notification);
       } else {
         hide(notification);
@@ -855,10 +855,10 @@
       if(connection._same) return;
 
       var form = getElementById('form');
-      if(connection === CONNECTED) {
-        show(form);
-      } else {
+      if(connection._val === SAVED) {
         hide(form);
+      } else {
+        show(form);
       }
     },
 
@@ -867,8 +867,8 @@
       if(connection._same) return;
 
       var error = getElementById('error');
-      if(connection === CONNECTION_ERROR) {
-        error.innerHTML = state.error;
+      if(connection._val === SAVE_ERROR) {
+        error.innerHTML = changes.wifi.error._val;
         show(error);
       } else {
         hide(error);
@@ -1113,9 +1113,9 @@
     dispatch({ type: SAVING });
     
     ajax("/save", "POST", JSON.stringify(data), function() {
-      dispatch({ type: CONNECTED });
+      dispatch({ type: SAVED });
     }, function(message) {
-      dispatch({ type: CONNECTION_ERROR, message: message });
+      dispatch({ type: SAVE_ERROR, message: message });
     });
   }
 
